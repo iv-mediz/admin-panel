@@ -1,0 +1,24 @@
+const CLASS_MAP = {
+  'Under Review': 'chip-review',
+  Shortlisted: 'chip-shortlisted',
+  'Interview Scheduled': 'chip-interview',
+  Rejected: 'chip-rejected',
+  Offer: 'chip-offer',
+  Completed: 'chip-completed',
+  Cancelled: 'chip-cancelled',
+  'On the way': 'chip-way',
+  Assigned: 'chip-assigned',
+  Active: 'chip-active',
+  Paused: 'chip-paused',
+  Closed: 'chip-closed',
+  Pending: 'chip-pending',
+  Invited: 'chip-pending',
+  Partner: 'chip-partner',
+  Locum: 'chip-locum',
+  'Part Time': 'chip-part',
+  'Full Time': 'chip-full',
+}
+
+export default function StatusChip({ label }) {
+  return <span className={`chip ${CLASS_MAP[label] || 'chip-review'}`}>{label}</span>
+}
