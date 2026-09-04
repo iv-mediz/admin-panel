@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 export default function Login() {
@@ -7,7 +7,7 @@ export default function Login() {
   const [password, setPassword] = useState('admin123')
   const [loading, setLoading] = useState(false)
 
-  function onSubmit(e) {
+  function onSubmit(e: FormEvent) {
     e.preventDefault()
     setLoading(true)
     setTimeout(() => {

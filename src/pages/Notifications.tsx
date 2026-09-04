@@ -1,7 +1,8 @@
-import { Ambulance, Bell, Building2, Briefcase, UserRound } from 'lucide-react'
+import { Ambulance, Bell, Building2, Briefcase, UserRound, type LucideIcon } from 'lucide-react'
 import { notifications } from '../data/mock'
+import type { NotificationType } from '../types'
 
-const META = {
+const META: Record<NotificationType, { bg: string; color: string; icon: LucideIcon }> = {
   ambulance: { bg: '#fee8e8', color: '#dc2626', icon: Ambulance },
   job: { bg: '#e7f7f8', color: '#0097a7', icon: Briefcase },
   profile: { bg: '#e8f0fe', color: '#2563eb', icon: UserRound },
@@ -23,7 +24,7 @@ export default function Notifications() {
       </div>
       <div className="card card-pad">
         {notifications.map((n) => {
-          const meta = META[n.type] || META.profile
+          const meta = META[n.type]
           const Icon = meta.icon
           return (
             <div className="list-item" key={n.id}>

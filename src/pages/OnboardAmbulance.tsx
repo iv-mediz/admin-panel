@@ -1,10 +1,22 @@
-import { useState } from 'react'
+import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useDirectory } from '../data/directory'
 
-const STEPS = ['Operator', 'Vehicle', 'Review']
+const STEPS = ['Operator', 'Vehicle', 'Review'] as const
 
-const empty = {
+interface AmbulanceForm {
+  operator: string
+  city: string
+  base: string
+  serviceType: string
+  vehicle: string
+  driver: string
+  phone: string
+  license: string
+  notes: string
+}
+
+const empty: AmbulanceForm = {
   operator: '',
   city: '',
   base: '',
@@ -20,13 +32,13 @@ export default function OnboardAmbulance() {
   const navigate = useNavigate()
   const { addVehicle } = useDirectory()
   const [step, setStep] = useState(0)
-  const [form, setForm] = useState(empty)
+  const [form, setForm] = useState<AmbulanceForm>(empty)
 
-  function set(key, value) {
+  function setField<K extends keyof AmbulanceForm>(key: K, value: AmbulanceForm[K]) {
     setForm((prev) => ({ ...prev, [key]: value }))
   }
 
-  function next(e) {
+  function next(e: FormEvent) {
     e.preventDefault()
     if (step < 2) {
       setStep(step + 1)
@@ -70,12 +82,12 @@ export default function OnboardAmbulance() {
       <form className="card card-pad" onSubmit={next}>
         {step === 0 && (
           <div className="form-grid">
-            <Field label="Operator / company" value={form.operator} onChange={(v) => set('operator', v)} placeholder="e.g. Mediz Care Ambulance" />
-            <Field label="Base area" value={form.base} onChange={(v) => set('base', v)} placeholder="e.g. Koramangala" />
-            <Field label="City" value={form.city} onChange={(v) => set('city', v)} />
+            <Field label="Operator / company" value={form.operator} onChange={(v) => setField('operator', v)} placeholder="e.g. Mediz Care Ambulance" />
+            <Field label="Base area" value={form.base} onChange={(v) => setField('base', v)} placeholder="e.g. Koramangala" />
+            <Field label="City" value={form.city} onChange={(v) => setField('city', v)} />
             <div className="field">
               <label>Service type</label>
-              <select value={form.serviceType} onChange={(e) => set('serviceType', e.target.value)}>
+              <select value={form.serviceType} onChange={(e) => setField('serviceType', e.target.value)}>
                 <option>Basic Life Support</option>
                 <option>Advanced Life Support</option>
                 <option>Neonatal Ambulance</option>
@@ -86,13 +98,13 @@ export default function OnboardAmbulance() {
 
         {step === 1 && (
           <div className="form-grid">
-            <Field label="Vehicle number" value={form.vehicle} onChange={(v) => set('vehicle', v)} placeholder="KA 01 AB 2148" />
-            <Field label="Driver name" value={form.driver} onChange={(v) => set('driver', v)} />
-            <Field label="Driver phone" value={form.phone} onChange={(v) => set('phone', v)} />
-            <Field label="Driving licence no." value={form.license} onChange={(v) => set('license', v)} optional />
+            <Field label="Vehicle number" value={form.vehicle} onChange={(v) => setField('vehicle', v)} placeholder="KA 01 AB 2148" />
+            <Field label="Driver name" value={form.driver} onChange={(v) => setField('driver', v)} />
+            <Field label="Driver phone" value={form.phone} onChange={(v) => setField('phone', v)} />
+            <Field label="Driving licence no." value={form.license} onChange={(v) => setField('license', v)} optional />
             <div className="field full">
               <label>Notes (optional)</label>
-              <textarea rows={3} value={form.notes} onChange={(e) => set('notes', e.target.value)} />
+              <textarea rows={3} value={form.notes} onChange={(e) => setField('notes', e.target.value)} />
             </div>
           </div>
         )}
@@ -126,7 +138,19 @@ export default function OnboardAmbulance() {
   )
 }
 
-function Field({ label, value, onChange, placeholder, optional }) {
+function Field({
+  label,
+  value,
+  onChange,
+  placeholder,
+  optional,
+}: {
+  label: string
+  value: string
+  onChange: (value: string) => void
+  placeholder?: string
+  optional?: boolean
+}) {
   return (
     <div className="field">
       <label>
@@ -138,7 +162,7 @@ function Field({ label, value, onChange, placeholder, optional }) {
   )
 }
 
-function Meta({ label, value }) {
+function Meta({ label, value }: { label: string; value: string }) {
   return (
     <div className="meta">
       <span>{label}</span>

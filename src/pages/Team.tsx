@@ -1,12 +1,21 @@
 import { Plus, Search } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type FormEvent } from 'react'
 import Modal from '../components/Modal'
 import StatusChip from '../components/StatusChip'
 import { useDirectory } from '../data/directory'
+import type { TeamMember, TeamRole } from '../types'
 
-const ROLES = ['All', 'Super Admin', 'Recruiter', 'Dispatch', 'Support', 'Hospital Relations', 'Operations']
+const ROLES = ['All', 'Super Admin', 'Recruiter', 'Dispatch', 'Support', 'Hospital Relations', 'Operations'] as const
 
-const empty = {
+interface MemberForm {
+  name: string
+  role: TeamRole
+  email: string
+  phone: string
+  city: string
+}
+
+const empty: MemberForm = {
   name: '',
   role: 'Support',
   email: '',
@@ -17,10 +26,10 @@ const empty = {
 export default function Team() {
   const { team, addMember, setMemberStatus } = useDirectory()
   const [query, setQuery] = useState('')
-  const [role, setRole] = useState('All')
+  const [role, setRole] = useState<(typeof ROLES)[number]>('All')
   const [open, setOpen] = useState(false)
-  const [selected, setSelected] = useState(null)
-  const [form, setForm] = useState(empty)
+  const [selected, setSelected] = useState<TeamMember | null>(null)
+  const [form, setForm] = useState<MemberForm>(empty)
 
   const filtered = useMemo(() => {
     return team.filter((m) => {
@@ -30,7 +39,7 @@ export default function Team() {
     })
   }, [team, query, role])
 
-  function submit(e) {
+  function submit(e: FormEvent) {
     e.preventDefault()
     addMember({
       id: `t${Date.now()}`,
@@ -83,7 +92,7 @@ export default function Team() {
           <Search size={16} color="#98A2B3" />
           <input placeholder="Search name or email" value={query} onChange={(e) => setQuery(e.target.value)} />
         </div>
-        <select className="select" value={role} onChange={(e) => setRole(e.target.value)}>
+        <select className="select" value={role} onChange={(e) => setRole(e.target.value as (typeof ROLES)[number])}>
           {ROLES.map((r) => (
             <option key={r} value={r}>
               {r === 'All' ? 'All roles' : r}
@@ -149,7 +158,7 @@ export default function Team() {
               </div>
               <div className="field">
                 <label>Role</label>
-                <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}>
+                <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value as TeamRole })}>
                   {ROLES.filter((r) => r !== 'All').map((r) => (
                     <option key={r}>{r}</option>
                   ))}

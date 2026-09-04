@@ -3,14 +3,15 @@ import { useMemo, useState } from 'react'
 import Modal from '../components/Modal'
 import StatusChip from '../components/StatusChip'
 import { applications as seed } from '../data/mock'
+import type { Application, ApplicationStatus } from '../types'
 
-const TABS = ['All', 'Under Review', 'Shortlisted', 'Interview Scheduled', 'Offer', 'Rejected']
+const TABS = ['All', 'Under Review', 'Shortlisted', 'Interview Scheduled', 'Offer', 'Rejected'] as const
 
 export default function Applications() {
-  const [items, setItems] = useState(seed)
-  const [tab, setTab] = useState('All')
+  const [items, setItems] = useState<Application[]>(seed)
+  const [tab, setTab] = useState<(typeof TABS)[number]>('All')
   const [query, setQuery] = useState('')
-  const [selected, setSelected] = useState(null)
+  const [selected, setSelected] = useState<Application | null>(null)
 
   const filtered = useMemo(() => {
     return items.filter((app) => {
@@ -21,7 +22,7 @@ export default function Applications() {
     })
   }, [items, tab, query])
 
-  function updateStatus(id, status) {
+  function updateStatus(id: string, status: ApplicationStatus) {
     setItems((prev) => prev.map((a) => (a.id === id ? { ...a, status } : a)))
     setSelected((cur) => (cur && cur.id === id ? { ...cur, status } : cur))
   }
@@ -116,7 +117,7 @@ export default function Applications() {
             className="select"
             style={{ width: '100%', marginTop: 8 }}
             value={selected.status}
-            onChange={(e) => updateStatus(selected.id, e.target.value)}
+            onChange={(e) => updateStatus(selected.id, e.target.value as ApplicationStatus)}
           >
             {TABS.filter((t) => t !== 'All').map((t) => (
               <option key={t}>{t}</option>

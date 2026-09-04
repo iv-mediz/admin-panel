@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import type { LucideIcon } from 'lucide-react'
 import {
   Ambulance,
   Bell,
@@ -15,7 +16,18 @@ import {
   X,
 } from 'lucide-react'
 
-const NAV = [
+interface NavItem {
+  to: string
+  label: string
+  icon: LucideIcon
+}
+
+interface NavGroup {
+  label: string
+  items: NavItem[]
+}
+
+const NAV: NavGroup[] = [
   {
     label: 'Overview',
     items: [
@@ -42,12 +54,12 @@ const NAV = [
   },
 ]
 
-function pageMeta(path) {
+function pageMeta(path: string): [string, string] {
   if (path.startsWith('/hospitals/onboard')) return ['Onboard hospital', 'Register a hospital partner']
   if (path.startsWith('/ambulances/onboard')) return ['Onboard ambulance', 'Register an operator and vehicle']
   if (path.startsWith('/hospitals')) return ['Hospitals', 'Onboard and approve partner hospitals']
   if (path.startsWith('/ambulances')) return ['Ambulances', 'Onboard fleet and review trip bookings']
-  const map = {
+  const map: Record<string, [string, string]> = {
     '/': ['Dashboard', 'Overview of jobs, applicants and ambulance bookings'],
     '/jobs': ['Healthcare Jobs', 'Post and manage hospital openings'],
     '/applications': ['Applications', 'Review candidates and update hiring status'],
@@ -56,7 +68,7 @@ function pageMeta(path) {
     '/notifications': ['Notifications', 'Alerts sent to the mobile app'],
     '/settings': ['Settings', 'Admin panel and brand preferences'],
   }
-  return map[path] || ['iv mediz', 'Admin']
+  return map[path] ?? ['iv mediz', 'Admin']
 }
 
 export default function Layout() {

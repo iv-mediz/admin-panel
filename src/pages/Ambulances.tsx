@@ -1,22 +1,23 @@
-import { Ambulance, Baby, HeartPulse, Plus, Search } from 'lucide-react'
+import { Ambulance, Baby, HeartPulse, Plus, Search, type LucideIcon } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import StatusChip from '../components/StatusChip'
 import { useDirectory } from '../data/directory'
 import { bookings, services } from '../data/mock'
+import type { AmbulanceService, OnboardLocationState } from '../types'
 
-const BOOKING_TABS = ['All', 'On the way', 'Assigned', 'Completed', 'Cancelled']
-const FLEET_TABS = ['All', 'Active', 'Pending']
-const ICONS = { bls: Ambulance, als: HeartPulse, neo: Baby }
+const BOOKING_TABS = ['All', 'On the way', 'Assigned', 'Completed', 'Cancelled'] as const
+const FLEET_TABS = ['All', 'Active', 'Pending'] as const
+const ICONS: Record<AmbulanceService['id'], LucideIcon> = { bls: Ambulance, als: HeartPulse, neo: Baby }
 
 export default function Ambulances() {
   const navigate = useNavigate()
   const location = useLocation()
   const { fleet, setVehicleStatus } = useDirectory()
-  const [view, setView] = useState('Fleet')
+  const [view, setView] = useState<'Fleet' | 'Bookings'>('Fleet')
   const [query, setQuery] = useState('')
-  const [tab, setTab] = useState('All')
-  const notice = location.state?.justOnboarded
+  const [tab, setTab] = useState<string>('All')
+  const notice = (location.state as OnboardLocationState | null)?.justOnboarded
 
   const filteredFleet = useMemo(() => {
     return fleet.filter((v) => {
@@ -39,7 +40,7 @@ export default function Ambulances() {
     })
   }, [query, tab])
 
-  function switchView(next) {
+  function switchView(next: 'Fleet' | 'Bookings') {
     setView(next)
     setTab('All')
     setQuery('')
@@ -61,7 +62,7 @@ export default function Ambulances() {
       {notice && <div className="notice">{notice} was submitted and is waiting for approval.</div>}
 
       <div className="pills" style={{ marginBottom: 14 }}>
-        {['Fleet', 'Bookings'].map((v) => (
+        {(['Fleet', 'Bookings'] as const).map((v) => (
           <button key={v} className={`pill ${view === v ? 'active' : ''}`} onClick={() => switchView(v)}>
             {v}
           </button>

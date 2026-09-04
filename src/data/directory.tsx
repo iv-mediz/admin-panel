@@ -1,14 +1,27 @@
-import { createContext, useContext, useMemo, useState } from 'react'
+import { createContext, useContext, useMemo, useState, type ReactNode } from 'react'
 import { fleet as seedFleet, hospitals as seedHospitals, team as seedTeam } from './mock'
+import type { AmbulanceVehicle, Hospital, TeamMember, TeamStatus, VehicleStatus, HospitalStatus } from '../types'
 
-const DirectoryContext = createContext(null)
+interface DirectoryContextValue {
+  hospitals: Hospital[]
+  fleet: AmbulanceVehicle[]
+  team: TeamMember[]
+  addHospital: (hospital: Hospital) => void
+  addVehicle: (vehicle: AmbulanceVehicle) => void
+  addMember: (member: TeamMember) => void
+  setHospitalStatus: (id: string, status: HospitalStatus) => void
+  setVehicleStatus: (id: string, status: VehicleStatus) => void
+  setMemberStatus: (id: string, status: TeamStatus) => void
+}
 
-export function DirectoryProvider({ children }) {
-  const [hospitals, setHospitals] = useState(seedHospitals)
-  const [fleet, setFleet] = useState(seedFleet)
-  const [team, setTeam] = useState(seedTeam)
+const DirectoryContext = createContext<DirectoryContextValue | null>(null)
 
-  const value = useMemo(
+export function DirectoryProvider({ children }: { children: ReactNode }) {
+  const [hospitals, setHospitals] = useState<Hospital[]>(seedHospitals)
+  const [fleet, setFleet] = useState<AmbulanceVehicle[]>(seedFleet)
+  const [team, setTeam] = useState<TeamMember[]>(seedTeam)
+
+  const value = useMemo<DirectoryContextValue>(
     () => ({
       hospitals,
       fleet,

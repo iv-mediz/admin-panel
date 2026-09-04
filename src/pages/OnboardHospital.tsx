@@ -1,11 +1,26 @@
-import { useState } from 'react'
+import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useDirectory } from '../data/directory'
 
-const STEPS = ['Hospital', 'Contact', 'Review']
-const DEPARTMENTS = ['Nursing', 'Doctors', 'Allied Health', 'Pharmacy', 'Critical Care', 'Cardiology']
+const STEPS = ['Hospital', 'Contact', 'Review'] as const
+const DEPARTMENTS = ['Nursing', 'Doctors', 'Allied Health', 'Pharmacy', 'Critical Care', 'Cardiology'] as const
 
-const empty = {
+interface HospitalForm {
+  name: string
+  type: string
+  registration: string
+  address: string
+  city: string
+  district: string
+  state: string
+  contactPerson: string
+  phone: string
+  email: string
+  departments: string[]
+  notes: string
+}
+
+const empty: HospitalForm = {
   name: '',
   type: 'Multi-speciality',
   registration: '',
@@ -24,13 +39,13 @@ export default function OnboardHospital() {
   const navigate = useNavigate()
   const { addHospital } = useDirectory()
   const [step, setStep] = useState(0)
-  const [form, setForm] = useState(empty)
+  const [form, setForm] = useState<HospitalForm>(empty)
 
-  function set(key, value) {
+  function setField<K extends keyof HospitalForm>(key: K, value: HospitalForm[K]) {
     setForm((prev) => ({ ...prev, [key]: value }))
   }
 
-  function toggleDept(dept) {
+  function toggleDept(dept: string) {
     setForm((prev) => ({
       ...prev,
       departments: prev.departments.includes(dept)
@@ -39,7 +54,7 @@ export default function OnboardHospital() {
     }))
   }
 
-  function next(e) {
+  function next(e: FormEvent) {
     e.preventDefault()
     if (step < 2) {
       setStep(step + 1)
@@ -86,23 +101,23 @@ export default function OnboardHospital() {
       <form className="card card-pad" onSubmit={next}>
         {step === 0 && (
           <div className="form-grid">
-            <Field label="Hospital name" value={form.name} onChange={(v) => set('name', v)} placeholder="e.g. Care Hospitals" />
+            <Field label="Hospital name" value={form.name} onChange={(v) => setField('name', v)} placeholder="e.g. Care Hospitals" />
             <div className="field">
               <label>Hospital type</label>
-              <select value={form.type} onChange={(e) => set('type', e.target.value)}>
+              <select value={form.type} onChange={(e) => setField('type', e.target.value)}>
                 <option>Multi-speciality</option>
                 <option>Super-speciality</option>
                 <option>Clinic</option>
                 <option>Nursing home</option>
               </select>
             </div>
-            <Field label="Registration / NABH no." value={form.registration} onChange={(v) => set('registration', v)} optional />
-            <Field label="Street address" value={form.address} onChange={(v) => set('address', v)} />
-            <Field label="City" value={form.city} onChange={(v) => set('city', v)} />
-            <Field label="District" value={form.district} onChange={(v) => set('district', v)} />
+            <Field label="Registration / NABH no." value={form.registration} onChange={(v) => setField('registration', v)} optional />
+            <Field label="Street address" value={form.address} onChange={(v) => setField('address', v)} />
+            <Field label="City" value={form.city} onChange={(v) => setField('city', v)} />
+            <Field label="District" value={form.district} onChange={(v) => setField('district', v)} />
             <div className="field">
               <label>State</label>
-              <select value={form.state} onChange={(e) => set('state', e.target.value)}>
+              <select value={form.state} onChange={(e) => setField('state', e.target.value)}>
                 <option>Telangana</option>
                 <option>Karnataka</option>
               </select>
@@ -111,32 +126,30 @@ export default function OnboardHospital() {
         )}
 
         {step === 1 && (
-          <>
-            <div className="form-grid">
-              <Field label="Contact person" value={form.contactPerson} onChange={(v) => set('contactPerson', v)} />
-              <Field label="Phone" value={form.phone} onChange={(v) => set('phone', v)} />
-              <Field label="Email" value={form.email} onChange={(v) => set('email', v)} type="email" />
-              <div className="field full">
-                <label>Hiring departments</label>
-                <div className="pills" style={{ marginTop: 4 }}>
-                  {DEPARTMENTS.map((d) => (
-                    <button
-                      type="button"
-                      key={d}
-                      className={`pill ${form.departments.includes(d) ? 'active' : ''}`}
-                      onClick={() => toggleDept(d)}
-                    >
-                      {d}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="field full">
-                <label>Notes (optional)</label>
-                <textarea rows={3} value={form.notes} onChange={(e) => set('notes', e.target.value)} />
+          <div className="form-grid">
+            <Field label="Contact person" value={form.contactPerson} onChange={(v) => setField('contactPerson', v)} />
+            <Field label="Phone" value={form.phone} onChange={(v) => setField('phone', v)} />
+            <Field label="Email" value={form.email} onChange={(v) => setField('email', v)} type="email" />
+            <div className="field full">
+              <label>Hiring departments</label>
+              <div className="pills" style={{ marginTop: 4 }}>
+                {DEPARTMENTS.map((d) => (
+                  <button
+                    type="button"
+                    key={d}
+                    className={`pill ${form.departments.includes(d) ? 'active' : ''}`}
+                    onClick={() => toggleDept(d)}
+                  >
+                    {d}
+                  </button>
+                ))}
               </div>
             </div>
-          </>
+            <div className="field full">
+              <label>Notes (optional)</label>
+              <textarea rows={3} value={form.notes} onChange={(e) => setField('notes', e.target.value)} />
+            </div>
+          </div>
         )}
 
         {step === 2 && (
@@ -175,7 +188,21 @@ export default function OnboardHospital() {
   )
 }
 
-function Field({ label, value, onChange, placeholder, type = 'text', optional }) {
+function Field({
+  label,
+  value,
+  onChange,
+  placeholder,
+  type = 'text',
+  optional,
+}: {
+  label: string
+  value: string
+  onChange: (value: string) => void
+  placeholder?: string
+  type?: string
+  optional?: boolean
+}) {
   return (
     <div className="field">
       <label>
@@ -187,7 +214,7 @@ function Field({ label, value, onChange, placeholder, type = 'text', optional })
   )
 }
 
-function Meta({ label, value }) {
+function Meta({ label, value }: { label: string; value: string }) {
   return (
     <div className="meta">
       <span>{label}</span>

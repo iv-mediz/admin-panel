@@ -1,12 +1,27 @@
 import { Plus, Search } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type FormEvent } from 'react'
 import Modal from '../components/Modal'
 import StatusChip from '../components/StatusChip'
 import { jobs as seedJobs } from '../data/mock'
+import type { Job, JobCategory, JobType } from '../types'
 
-const CATEGORIES = ['All', 'Nursing', 'Doctors', 'Allied Health', 'Pharmacy']
-const TYPES = ['All', 'Locum', 'Part Time', 'Full Time']
-const emptyJob = {
+const CATEGORIES = ['All', 'Nursing', 'Doctors', 'Allied Health', 'Pharmacy'] as const
+const TYPES = ['All', 'Locum', 'Part Time', 'Full Time'] as const
+
+interface JobForm {
+  title: string
+  hospital: string
+  location: string
+  salary: string
+  experience: string
+  type: JobType
+  category: JobCategory
+  department: string
+  availability: string
+  description: string
+}
+
+const emptyJob: JobForm = {
   title: '',
   hospital: '',
   location: '',
@@ -20,13 +35,13 @@ const emptyJob = {
 }
 
 export default function Jobs() {
-  const [items, setItems] = useState(seedJobs)
+  const [items, setItems] = useState<Job[]>(seedJobs)
   const [query, setQuery] = useState('')
-  const [category, setCategory] = useState('All')
-  const [type, setType] = useState('All')
+  const [category, setCategory] = useState<(typeof CATEGORIES)[number]>('All')
+  const [type, setType] = useState<(typeof TYPES)[number]>('All')
   const [open, setOpen] = useState(false)
-  const [selected, setSelected] = useState(null)
-  const [form, setForm] = useState(emptyJob)
+  const [selected, setSelected] = useState<Job | null>(null)
+  const [form, setForm] = useState<JobForm>(emptyJob)
 
   const filtered = useMemo(() => {
     return items.filter((job) => {
@@ -42,7 +57,7 @@ export default function Jobs() {
     })
   }, [items, query, category, type])
 
-  function saveJob(e) {
+  function saveJob(e: FormEvent) {
     e.preventDefault()
     setItems((prev) => [
       {
@@ -85,7 +100,7 @@ export default function Jobs() {
             onChange={(e) => setQuery(e.target.value)}
           />
         </div>
-        <select className="select" value={type} onChange={(e) => setType(e.target.value)}>
+        <select className="select" value={type} onChange={(e) => setType(e.target.value as (typeof TYPES)[number])}>
           {TYPES.map((t) => (
             <option key={t} value={t}>
               {t === 'All' ? 'All job types' : t}
@@ -159,7 +174,7 @@ export default function Jobs() {
               <Field label="Department" value={form.department} onChange={(v) => setForm({ ...form, department: v })} />
               <div className="field">
                 <label>Job type</label>
-                <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
+                <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value as JobType })}>
                   <option>Locum</option>
                   <option>Part Time</option>
                   <option>Full Time</option>
@@ -167,7 +182,7 @@ export default function Jobs() {
               </div>
               <div className="field">
                 <label>Category</label>
-                <select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
+                <select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value as JobCategory })}>
                   <option>Nursing</option>
                   <option>Doctors</option>
                   <option>Allied Health</option>
@@ -221,7 +236,7 @@ export default function Jobs() {
   )
 }
 
-function Field({ label, value, onChange }) {
+function Field({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
   return (
     <div className="field">
       <label>{label}</label>

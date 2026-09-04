@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import Layout from './components/Layout'
 import { DirectoryProvider } from './data/directory'
@@ -14,7 +15,7 @@ import Professionals from './pages/Professionals'
 import Settings from './pages/Settings'
 import Team from './pages/Team'
 
-function Protected({ children }) {
+function Protected({ children }: { children: ReactNode }) {
   const ok = localStorage.getItem('ivmediz-admin') === '1'
   if (!ok) return <Navigate to="/login" replace />
   return children

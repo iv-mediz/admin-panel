@@ -1,4 +1,17 @@
-export const jobs = [
+import type {
+  AmbulanceService,
+  AmbulanceVehicle,
+  AppNotification,
+  Application,
+  Booking,
+  Hospital,
+  Job,
+  Professional,
+  TeamMember,
+  WeeklyStat,
+} from '../types'
+
+export const jobs: Job[] = [
   {
     id: 'j1',
     title: 'Staff Nurse',
@@ -217,7 +230,7 @@ export const jobs = [
   },
 ]
 
-export const applications = [
+export const applications: Application[] = [
   {
     id: 'a1',
     jobId: 'j1',
@@ -304,7 +317,7 @@ export const applications = [
   },
 ]
 
-export const professionals = [
+export const professionals: Professional[] = [
   {
     id: 'u1',
     name: 'Dr. Vineeth',
@@ -385,7 +398,7 @@ export const professionals = [
   },
 ]
 
-export const fleet = [
+export const fleet: AmbulanceVehicle[] = [
   {
     id: 'v1',
     operator: 'Mediz Care Ambulance',
@@ -432,7 +445,7 @@ export const fleet = [
   },
 ]
 
-export const hospitals = [
+export const hospitals: Hospital[] = [
   {
     id: 'h1',
     name: 'Apollo Hospitals',
@@ -498,7 +511,7 @@ export const hospitals = [
   },
 ]
 
-export const bookings = [
+export const bookings: Booking[] = [
   {
     id: 'MC-1842',
     serviceType: 'Advanced Life Support',
@@ -561,7 +574,7 @@ export const bookings = [
   },
 ]
 
-export const services = [
+export const services: AmbulanceService[] = [
   {
     id: 'bls',
     title: 'Basic Life Support',
@@ -585,7 +598,7 @@ export const services = [
   },
 ]
 
-export const notifications = [
+export const notifications: AppNotification[] = [
   {
     id: 'n1',
     title: 'Ambulance is 4 min away',
@@ -628,7 +641,7 @@ export const notifications = [
   },
 ]
 
-export const team = [
+export const team: TeamMember[] = [
   {
     id: 't1',
     name: 'Aditi Rao',
@@ -691,7 +704,7 @@ export const team = [
   },
 ]
 
-export const weeklyStats = [
+export const weeklyStats: WeeklyStat[] = [
   { label: 'Mon', jobs: 12, bookings: 8 },
   { label: 'Tue', jobs: 18, bookings: 11 },
   { label: 'Wed', jobs: 14, bookings: 9 },

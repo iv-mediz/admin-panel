@@ -1,4 +1,4 @@
-const CLASS_MAP = {
+const CLASS_MAP: Record<string, string> = {
   'Under Review': 'chip-review',
   Shortlisted: 'chip-shortlisted',
   'Interview Scheduled': 'chip-interview',
@@ -19,6 +19,6 @@ const CLASS_MAP = {
   'Full Time': 'chip-full',
 }
 
-export default function StatusChip({ label }) {
-  return <span className={`chip ${CLASS_MAP[label] || 'chip-review'}`}>{label}</span>
+export default function StatusChip({ label }: { label: string }) {
+  return <span className={`chip ${CLASS_MAP[label] ?? 'chip-review'}`}>{label}</span>
 }

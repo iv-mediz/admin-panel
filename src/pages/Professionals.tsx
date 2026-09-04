@@ -3,13 +3,14 @@ import { useMemo, useState } from 'react'
 import Modal from '../components/Modal'
 import StatusChip from '../components/StatusChip'
 import { professionals } from '../data/mock'
+import type { Professional } from '../types'
 
-const ROLES = ['All', 'Doctor', 'Staff Nurse', 'OT Nurse', 'Pharmacist', 'Allied Health']
+const ROLES = ['All', 'Doctor', 'Staff Nurse', 'OT Nurse', 'Pharmacist', 'Allied Health'] as const
 
 export default function Professionals() {
   const [query, setQuery] = useState('')
-  const [role, setRole] = useState('All')
-  const [selected, setSelected] = useState(null)
+  const [role, setRole] = useState<(typeof ROLES)[number]>('All')
+  const [selected, setSelected] = useState<Professional | null>(null)
 
   const filtered = useMemo(() => {
     return professionals.filter((u) => {
@@ -32,7 +33,7 @@ export default function Professionals() {
           <Search size={16} color="#98A2B3" />
           <input placeholder="Search name or speciality" value={query} onChange={(e) => setQuery(e.target.value)} />
         </div>
-        <select className="select" value={role} onChange={(e) => setRole(e.target.value)}>
+        <select className="select" value={role} onChange={(e) => setRole(e.target.value as (typeof ROLES)[number])}>
           {ROLES.map((r) => (
             <option key={r} value={r}>
               {r === 'All' ? 'All roles' : r}

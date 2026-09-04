@@ -1,6 +1,6 @@
 # iv mediz Admin Panel
 
-React + Vite admin UI aligned with the Flutter mobile app.
+React + TypeScript + Vite admin UI aligned with the Flutter mobile app.
 
 ## Run
 

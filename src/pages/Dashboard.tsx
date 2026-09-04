@@ -1,3 +1,4 @@
+import type { LucideIcon } from 'lucide-react'
 import { Ambulance, Briefcase, Building2, Users } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import StatusChip from '../components/StatusChip'
@@ -31,7 +32,7 @@ export default function Dashboard() {
         <Stat icon={Briefcase} color="#e7f7f8" accent="#0097a7" label="Active jobs" value={activeJobs} meta="+4 this week" />
         <Stat icon={Users} color="#e8f0fe" accent="#2563eb" label="Applications" value={applications.length} meta="2 interviews today" />
         <Stat icon={Ambulance} color="#fee8e8" accent="#dc2626" label="Live ambulances" value={liveBookings} meta="1 ALS on the way" />
-        <Stat icon={Building2} color="#e8f8ee" accent="#16a34a" label="Partner hospitals" value="6" meta="1 pending request" up />
+        <Stat icon={Building2} color="#e8f8ee" accent="#16a34a" label="Partner hospitals" value="6" meta="1 pending request" />
       </section>
 
       <div className="grid-2">
@@ -138,7 +139,23 @@ export default function Dashboard() {
   )
 }
 
-function Stat({ icon: Icon, color, accent, label, value, meta, up = true }) {
+function Stat({
+  icon: Icon,
+  color,
+  accent,
+  label,
+  value,
+  meta,
+  up = true,
+}: {
+  icon: LucideIcon
+  color: string
+  accent: string
+  label: string
+  value: number | string
+  meta: string
+  up?: boolean
+}) {
   return (
     <article className="stat-card">
       <div className="stat-icon" style={{ background: color, color: accent }}>

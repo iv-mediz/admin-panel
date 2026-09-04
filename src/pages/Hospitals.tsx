@@ -3,17 +3,18 @@ import { useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import StatusChip from '../components/StatusChip'
 import { useDirectory } from '../data/directory'
+import type { OnboardLocationState } from '../types'
 
-const TABS = ['All', 'Partner', 'Pending']
+const TABS = ['All', 'Partner', 'Pending'] as const
 
 export default function Hospitals() {
   const navigate = useNavigate()
   const location = useLocation()
   const { hospitals, setHospitalStatus } = useDirectory()
   const [query, setQuery] = useState('')
-  const [tab, setTab] = useState('All')
+  const [tab, setTab] = useState<(typeof TABS)[number]>('All')
   const [state, setState] = useState('All')
-  const notice = location.state?.justOnboarded
+  const notice = (location.state as OnboardLocationState | null)?.justOnboarded
 
   const filtered = useMemo(() => {
     return hospitals.filter((h) => {
@@ -37,11 +38,7 @@ export default function Hospitals() {
         </button>
       </div>
 
-      {notice && (
-        <div className="notice">
-          {notice} was submitted and is waiting for approval.
-        </div>
-      )}
+      {notice && <div className="notice">{notice} was submitted and is waiting for approval.</div>}
 
       <div className="toolbar">
         <div className="search">
