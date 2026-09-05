@@ -13,6 +13,8 @@ import OnboardAmbulance from './pages/OnboardAmbulance'
 import OnboardHospital from './pages/OnboardHospital'
 import Professionals from './pages/Professionals'
 import Settings from './pages/Settings'
+import States from './pages/States'
+import Cities from './pages/Cities'
 import Team from './pages/Team'
 
 function Protected({ children }: { children: ReactNode }) {
@@ -43,6 +45,8 @@ export default function App() {
         <Route path="/hospitals/onboard" element={<OnboardHospital />} />
         <Route path="/ambulances" element={<Ambulances />} />
         <Route path="/ambulances/onboard" element={<OnboardAmbulance />} />
+        <Route path="/states" element={<States />} />
+        <Route path="/cities" element={<Cities />} />
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/settings" element={<Settings />} />
       </Route>

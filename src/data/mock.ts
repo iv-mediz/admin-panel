@@ -2,8 +2,10 @@ import type {
   AmbulanceService,
   AmbulanceVehicle,
   AppNotification,
+  AppState,
   Application,
   Booking,
+  City,
   Hospital,
   Job,
   Professional,
@@ -702,6 +704,24 @@ export const team: TeamMember[] = [
     joined: '28 Aug 2026',
     status: 'Invited',
   },
+]
+
+export const states: AppState[] = [
+  { id: 'st-ts', name: 'Telangana', code: 'TS', capital: 'Hyderabad', status: 'Active' },
+  { id: 'st-ka', name: 'Karnataka', code: 'KA', capital: 'Bengaluru', status: 'Active' },
+  { id: 'st-ap', name: 'Andhra Pradesh', code: 'AP', capital: 'Amaravati', status: 'Pending' },
+  { id: 'st-tn', name: 'Tamil Nadu', code: 'TN', capital: 'Chennai', status: 'Paused' },
+]
+
+export const cities: City[] = [
+  { id: 'ct-hyd', name: 'Hyderabad', stateId: 'st-ts', stateName: 'Telangana', status: 'Active' },
+  { id: 'ct-sec', name: 'Secunderabad', stateId: 'st-ts', stateName: 'Telangana', status: 'Active' },
+  { id: 'ct-rr', name: 'Rangareddy', stateId: 'st-ts', stateName: 'Telangana', status: 'Active' },
+  { id: 'ct-med', name: 'Medchal', stateId: 'st-ts', stateName: 'Telangana', status: 'Active' },
+  { id: 'ct-wgl', name: 'Warangal', stateId: 'st-ts', stateName: 'Telangana', status: 'Active' },
+  { id: 'ct-nzb', name: 'Nizamabad', stateId: 'st-ts', stateName: 'Telangana', status: 'Active' },
+  { id: 'ct-blr', name: 'Bengaluru', stateId: 'st-ka', stateName: 'Karnataka', status: 'Active' },
+  { id: 'ct-mys', name: 'Mysuru', stateId: 'st-ka', stateName: 'Karnataka', status: 'Pending' },
 ]
 
 export const weeklyStats: WeeklyStat[] = [

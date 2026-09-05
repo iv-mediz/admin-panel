@@ -139,6 +139,24 @@ export interface WeeklyStat {
   bookings: number
 }
 
+export type LocationStatus = 'Active' | 'Paused' | 'Pending'
+
+export interface AppState {
+  id: string
+  name: string
+  code: string
+  capital: string
+  status: LocationStatus
+}
+
+export interface City {
+  id: string
+  name: string
+  stateId: string
+  stateName: string
+  status: LocationStatus
+}
+
 export interface OnboardLocationState {
   justOnboarded?: string
 }

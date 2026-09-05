@@ -8,6 +8,8 @@ import {
   Building2,
   LayoutDashboard,
   LogOut,
+  MapPin,
+  MapPinned,
   Menu,
   Settings,
   UserRound,
@@ -46,6 +48,13 @@ const NAV: NavGroup[] = [
     ],
   },
   {
+    label: 'Locations',
+    items: [
+      { to: '/states', label: 'States', icon: MapPinned },
+      { to: '/cities', label: 'Cities', icon: MapPin },
+    ],
+  },
+  {
     label: 'More',
     items: [
       { to: '/notifications', label: 'Notifications', icon: Bell },
@@ -65,6 +74,8 @@ function pageMeta(path: string): [string, string] {
     '/applications': ['Applications', 'Review candidates and update hiring status'],
     '/professionals': ['Professionals', 'Doctors, nurses and allied health users'],
     '/team': ['Team', 'Internal staff who run the iv mediz admin panel'],
+    '/states': ['States', 'States where iv mediz is live'],
+    '/cities': ['Cities', 'Cities and districts for jobs and ambulance pickup'],
     '/notifications': ['Notifications', 'Alerts sent to the mobile app'],
     '/settings': ['Settings', 'Admin panel and brand preferences'],
   }
