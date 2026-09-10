@@ -1,10 +1,12 @@
 import { Plus, Search } from 'lucide-react'
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import LocationFilters from '../components/LocationFilters'
 import Modal from '../components/Modal'
 import StatusChip from '../components/StatusChip'
 import { useDirectory } from '../data/directory'
 import type { LocationStatus } from '../types'
+import { matchesLocation } from '../utils/locationFilter'
 
 const TABS = ['All', 'Active', 'Pending', 'Paused'] as const
 
@@ -14,22 +16,24 @@ export default function Cities() {
   const { cities, states, hospitals, addCity, setCityStatus } = useDirectory()
   const [query, setQuery] = useState('')
   const [tab, setTab] = useState<(typeof TABS)[number]>('All')
-  const [stateId, setStateId] = useState(presetState)
+  const presetStateName = states.find((s) => s.id === presetState)?.name ?? 'All'
+  const [stateFilter, setStateFilter] = useState(presetStateName)
+  const [districtFilter, setDistrictFilter] = useState('All')
   const [open, setOpen] = useState(false)
   const [form, setForm] = useState({ name: '', stateId: states[0]?.id ?? '' })
 
   useEffect(() => {
-    setStateId(presetState)
-  }, [presetState])
+    setStateFilter(presetStateName)
+  }, [presetStateName])
 
   const filtered = useMemo(() => {
     return cities.filter((c) => {
       const q = query.toLowerCase()
       const matchesQuery = !q || c.name.toLowerCase().includes(q) || c.stateName.toLowerCase().includes(q)
-      const matchesState = stateId === 'All' || c.stateId === stateId
-      return matchesQuery && matchesState && (tab === 'All' || c.status === tab)
+      const matchesLoc = matchesLocation({ state: c.stateName, district: c.name }, stateFilter, districtFilter)
+      return matchesQuery && matchesLoc && (tab === 'All' || c.status === tab)
     })
-  }, [cities, query, tab, stateId])
+  }, [cities, query, tab, stateFilter, districtFilter])
 
   function submit(e: FormEvent) {
     e.preventDefault()
@@ -64,14 +68,12 @@ export default function Cities() {
           <Search size={16} color="#98A2B3" />
           <input placeholder="Search city or state" value={query} onChange={(e) => setQuery(e.target.value)} />
         </div>
-        <select className="select" value={stateId} onChange={(e) => setStateId(e.target.value)}>
-          <option value="All">All states</option>
-          {states.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name}
-            </option>
-          ))}
-        </select>
+        <LocationFilters
+          state={stateFilter}
+          district={districtFilter}
+          onStateChange={setStateFilter}
+          onDistrictChange={setDistrictFilter}
+        />
       </div>
       <div className="pills" style={{ marginBottom: 14 }}>
         {TABS.map((t) => (

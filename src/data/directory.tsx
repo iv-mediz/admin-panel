@@ -45,6 +45,8 @@ interface DirectoryContextValue {
   addState: (state: AppState) => void
   addCity: (city: City) => void
   addFranchise: (franchise: Franchise) => void
+  addProfessional: (professional: Professional) => void
+  removeProfessional: (id: string) => void
   setHospitalStatus: (id: string, status: HospitalStatus) => void
   setVehicleStatus: (id: string, status: VehicleStatus) => void
   setMemberStatus: (id: string, status: TeamStatus) => void
@@ -94,6 +96,11 @@ export function DirectoryProvider({ children }: { children: ReactNode }) {
       addState: (state) => setStates((prev) => [state, ...prev]),
       addCity: (city) => setCities((prev) => [city, ...prev]),
       addFranchise: (franchise) => setFranchises((prev) => [franchise, ...prev]),
+      addProfessional: (professional) => setProfessionals((prev) => [professional, ...prev]),
+      removeProfessional: (id) => {
+        setProfessionals((prev) => prev.filter((p) => p.id !== id))
+        setUserSubscriptions((prev) => prev.filter((s) => s.userId !== id))
+      },
       setHospitalStatus: (id, status) =>
         setHospitals((prev) => prev.map((h) => (h.id === id ? { ...h, status } : h))),
       setVehicleStatus: (id, status) =>

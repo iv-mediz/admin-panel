@@ -1,9 +1,11 @@
 import { Plus, Search } from 'lucide-react'
 import { useMemo, useState, type FormEvent } from 'react'
+import LocationFilters from '../components/LocationFilters'
 import Modal from '../components/Modal'
 import StatusChip from '../components/StatusChip'
 import { useDirectory } from '../data/directory'
 import type { TeamMember, TeamRole } from '../types'
+import { matchesLocation } from '../utils/locationFilter'
 
 const ROLES = ['All', 'Super Admin', 'Recruiter', 'Dispatch', 'Support', 'Hospital Relations', 'Operations'] as const
 
@@ -27,6 +29,8 @@ export default function Team() {
   const { team, addMember, setMemberStatus } = useDirectory()
   const [query, setQuery] = useState('')
   const [role, setRole] = useState<(typeof ROLES)[number]>('All')
+  const [stateFilter, setStateFilter] = useState('All')
+  const [districtFilter, setDistrictFilter] = useState('All')
   const [open, setOpen] = useState(false)
   const [selected, setSelected] = useState<TeamMember | null>(null)
   const [form, setForm] = useState<MemberForm>(empty)
@@ -35,15 +39,18 @@ export default function Team() {
     return team.filter((m) => {
       const q = query.toLowerCase()
       const matchesQuery = !q || m.name.toLowerCase().includes(q) || m.email.toLowerCase().includes(q)
-      return matchesQuery && (role === 'All' || m.role === role)
+      const matchesLoc = matchesLocation(m, stateFilter, districtFilter)
+      return matchesQuery && matchesLoc && (role === 'All' || m.role === role)
     })
-  }, [team, query, role])
+  }, [team, query, role, stateFilter, districtFilter])
 
   function submit(e: FormEvent) {
     e.preventDefault()
     addMember({
       id: `t${Date.now()}`,
       ...form,
+      district: form.city,
+      state: form.city === 'Hyderabad' ? 'Telangana' : 'Karnataka',
       joined: 'Just now',
       status: 'Invited',
     })
@@ -92,6 +99,12 @@ export default function Team() {
           <Search size={16} color="#98A2B3" />
           <input placeholder="Search name or email" value={query} onChange={(e) => setQuery(e.target.value)} />
         </div>
+        <LocationFilters
+          state={stateFilter}
+          district={districtFilter}
+          onStateChange={setStateFilter}
+          onDistrictChange={setDistrictFilter}
+        />
         <select className="select" value={role} onChange={(e) => setRole(e.target.value as (typeof ROLES)[number])}>
           {ROLES.map((r) => (
             <option key={r} value={r}>

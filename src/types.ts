@@ -44,11 +44,15 @@ export interface Application {
   applicant: string
   role: string
   location: string
+  state: string
+  district: string
   appliedOn: string
   status: ApplicationStatus
   experience: string
   phone: string
   email: string
+  employmentPreference: JobType
+  timeAvailability?: string[]
 }
 
 export interface Professional {
@@ -57,12 +61,16 @@ export interface Professional {
   role: string
   specialization: string
   location: string
+  state: string
+  district: string
   phone: string
   email: string
   experience: string
   completion: number
   status: 'Active' | 'Pending'
   applications: number
+  employmentPreference: JobType
+  timeAvailability?: string[]
   subscriptionPlan?: SubscriptionPlanName
   subscriptionStatus?: SubscriptionStatus
 }
@@ -71,6 +79,7 @@ export interface Hospital {
   id: string
   name: string
   city: string
+  district: string
   state: string
   jobs: number
   rating: number
@@ -90,6 +99,8 @@ export interface AmbulanceVehicle {
   driver: string
   phone: string
   city: string
+  district: string
+  state: string
   base: string
   status: VehicleStatus
   vehiclePhotos?: VehiclePhoto[]
@@ -106,6 +117,8 @@ export interface Booking {
   patientName: string
   driver: string
   vehicle: string
+  state: string
+  district: string
 }
 
 export interface AmbulanceService {
@@ -132,6 +145,8 @@ export interface TeamMember {
   email: string
   phone: string
   city: string
+  district: string
+  state: string
   joined: string
   status: TeamStatus
 }

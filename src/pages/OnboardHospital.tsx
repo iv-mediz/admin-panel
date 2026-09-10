@@ -65,6 +65,7 @@ export default function OnboardHospital() {
       name: form.name,
       type: form.type,
       city: form.city,
+      district: form.district || form.city,
       state: form.state,
       jobs: 0,
       rating: 0,

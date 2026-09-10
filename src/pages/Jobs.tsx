@@ -1,9 +1,11 @@
 import { Plus, Search } from 'lucide-react'
 import { useMemo, useState, type FormEvent } from 'react'
+import LocationFilters from '../components/LocationFilters'
 import Modal from '../components/Modal'
 import StatusChip from '../components/StatusChip'
 import { jobs as seedJobs } from '../data/mock'
 import type { Job, JobCategory, JobType } from '../types'
+import { matchesLocation } from '../utils/locationFilter'
 
 const CATEGORIES = ['All', 'Nursing', 'Doctors', 'Allied Health', 'Pharmacy'] as const
 const TYPES = ['All', 'Locum', 'Part Time', 'Full Time'] as const
@@ -39,6 +41,8 @@ export default function Jobs() {
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState<(typeof CATEGORIES)[number]>('All')
   const [type, setType] = useState<(typeof TYPES)[number]>('All')
+  const [stateFilter, setStateFilter] = useState('All')
+  const [districtFilter, setDistrictFilter] = useState('All')
   const [open, setOpen] = useState(false)
   const [selected, setSelected] = useState<Job | null>(null)
   const [form, setForm] = useState<JobForm>(emptyJob)
@@ -53,9 +57,10 @@ export default function Jobs() {
         job.location.toLowerCase().includes(q)
       const matchesCat = category === 'All' || job.category === category
       const matchesType = type === 'All' || job.type === type
-      return matchesQuery && matchesCat && matchesType
+      const matchesLoc = matchesLocation(job, stateFilter, districtFilter)
+      return matchesQuery && matchesCat && matchesType && matchesLoc
     })
-  }, [items, query, category, type])
+  }, [items, query, category, type, stateFilter, districtFilter])
 
   function saveJob(e: FormEvent) {
     e.preventDefault()
@@ -100,6 +105,12 @@ export default function Jobs() {
             onChange={(e) => setQuery(e.target.value)}
           />
         </div>
+        <LocationFilters
+          state={stateFilter}
+          district={districtFilter}
+          onStateChange={setStateFilter}
+          onDistrictChange={setDistrictFilter}
+        />
         <select className="select" value={type} onChange={(e) => setType(e.target.value as (typeof TYPES)[number])}>
           {TYPES.map((t) => (
             <option key={t} value={t}>

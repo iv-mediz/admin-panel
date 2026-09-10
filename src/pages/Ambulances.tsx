@@ -1,11 +1,13 @@
 import { Ambulance, Baby, Camera, HeartPulse, Plus, Search, type LucideIcon } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import LocationFilters from '../components/LocationFilters'
 import Modal from '../components/Modal'
 import StatusChip from '../components/StatusChip'
 import { useDirectory } from '../data/directory'
 import { bookings, services } from '../data/mock'
 import type { AmbulanceService, AmbulanceVehicle, OnboardLocationState } from '../types'
+import { matchesLocation } from '../utils/locationFilter'
 
 const BOOKING_TABS = ['All', 'On the way', 'Assigned', 'Completed', 'Cancelled'] as const
 const FLEET_TABS = ['All', 'Active', 'Pending'] as const
@@ -18,6 +20,8 @@ export default function Ambulances() {
   const [view, setView] = useState<'Fleet' | 'Bookings'>('Fleet')
   const [query, setQuery] = useState('')
   const [tab, setTab] = useState<string>('All')
+  const [stateFilter, setStateFilter] = useState('All')
+  const [districtFilter, setDistrictFilter] = useState('All')
   const [selected, setSelected] = useState<AmbulanceVehicle | null>(null)
   const notice = (location.state as OnboardLocationState | null)?.justOnboarded
 
@@ -29,23 +33,27 @@ export default function Ambulances() {
         v.vehicle.toLowerCase().includes(q) ||
         v.operator.toLowerCase().includes(q) ||
         v.driver.toLowerCase().includes(q)
-      return matchesQuery && (tab === 'All' || v.status === tab)
+      const matchesLoc = matchesLocation(v, stateFilter, districtFilter)
+      return matchesQuery && matchesLoc && (tab === 'All' || v.status === tab)
     })
-  }, [fleet, query, tab])
+  }, [fleet, query, tab, stateFilter, districtFilter])
 
   const filteredBookings = useMemo(() => {
     return bookings.filter((b) => {
       const q = query.toLowerCase()
       const matchesQuery =
         !q || b.id.toLowerCase().includes(q) || b.pickup.toLowerCase().includes(q) || b.patientName.toLowerCase().includes(q)
-      return matchesQuery && (tab === 'All' || b.status === tab)
+      const matchesLoc = matchesLocation(b, stateFilter, districtFilter)
+      return matchesQuery && matchesLoc && (tab === 'All' || b.status === tab)
     })
-  }, [query, tab])
+  }, [query, tab, stateFilter, districtFilter])
 
   function switchView(next: 'Fleet' | 'Bookings') {
     setView(next)
     setTab('All')
     setQuery('')
+    setStateFilter('All')
+    setDistrictFilter('All')
   }
 
   return (
@@ -101,6 +109,12 @@ export default function Ambulances() {
             onChange={(e) => setQuery(e.target.value)}
           />
         </div>
+        <LocationFilters
+          state={stateFilter}
+          district={districtFilter}
+          onStateChange={setStateFilter}
+          onDistrictChange={setDistrictFilter}
+        />
       </div>
       <div className="pills" style={{ marginBottom: 14 }}>
         {(view === 'Fleet' ? FLEET_TABS : BOOKING_TABS).map((t) => (

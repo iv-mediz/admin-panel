@@ -1,5 +1,6 @@
 import { MapPinned, Plus, Search } from 'lucide-react'
 import { useMemo, useState, type FormEvent } from 'react'
+import LocationFilters from '../components/LocationFilters'
 import Modal from '../components/Modal'
 import StatusChip from '../components/StatusChip'
 import { useDirectory } from '../data/directory'
@@ -21,6 +22,8 @@ export default function Franchises() {
   const { franchises, states, cities, addFranchise, setFranchiseStatus } = useDirectory()
   const [query, setQuery] = useState('')
   const [tab, setTab] = useState<(typeof TABS)[number]>('All')
+  const [stateFilter, setStateFilter] = useState('All')
+  const [districtFilter, setDistrictFilter] = useState('All')
   const [open, setOpen] = useState(false)
   const [form, setForm] = useState(empty)
 
@@ -38,9 +41,11 @@ export default function Franchises() {
         f.owner.toLowerCase().includes(q) ||
         f.stateName.toLowerCase().includes(q) ||
         f.cities.some((c) => c.toLowerCase().includes(q))
-      return matchesQuery && (tab === 'All' || f.status === tab)
+      const matchesState = stateFilter === 'All' || f.stateName === stateFilter
+      const matchesDistrict = districtFilter === 'All' || f.cities.includes(districtFilter)
+      return matchesQuery && matchesState && matchesDistrict && (tab === 'All' || f.status === tab)
     })
-  }, [franchises, query, tab])
+  }, [franchises, query, tab, stateFilter, districtFilter])
 
   function toggleCity(city: string) {
     setForm((prev) => ({
@@ -111,6 +116,12 @@ export default function Franchises() {
           <Search size={16} color="#98A2B3" />
           <input placeholder="Search franchise, owner, state or city" value={query} onChange={(e) => setQuery(e.target.value)} />
         </div>
+        <LocationFilters
+          state={stateFilter}
+          district={districtFilter}
+          onStateChange={setStateFilter}
+          onDistrictChange={setDistrictFilter}
+        />
       </div>
       <div className="pills" style={{ marginBottom: 14 }}>
         {TABS.map((t) => (

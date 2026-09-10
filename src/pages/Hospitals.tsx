@@ -1,9 +1,11 @@
 import { Plus, Search, Star } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import LocationFilters from '../components/LocationFilters'
 import StatusChip from '../components/StatusChip'
 import { useDirectory } from '../data/directory'
 import type { OnboardLocationState } from '../types'
+import { matchesLocation } from '../utils/locationFilter'
 
 const TABS = ['All', 'Partner', 'Pending'] as const
 
@@ -13,7 +15,8 @@ export default function Hospitals() {
   const { hospitals, setHospitalStatus } = useDirectory()
   const [query, setQuery] = useState('')
   const [tab, setTab] = useState<(typeof TABS)[number]>('All')
-  const [state, setState] = useState('All')
+  const [stateFilter, setStateFilter] = useState('All')
+  const [districtFilter, setDistrictFilter] = useState('All')
   const notice = (location.state as OnboardLocationState | null)?.justOnboarded
 
   const filtered = useMemo(() => {
@@ -21,9 +24,10 @@ export default function Hospitals() {
       const q = query.toLowerCase()
       const matchesQuery = !q || h.name.toLowerCase().includes(q) || h.city.toLowerCase().includes(q)
       const matchesTab = tab === 'All' || h.status === tab
-      return matchesQuery && matchesTab && (state === 'All' || h.state === state)
+      const matchesLoc = matchesLocation(h, stateFilter, districtFilter)
+      return matchesQuery && matchesTab && matchesLoc
     })
-  }, [hospitals, query, tab, state])
+  }, [hospitals, query, tab, stateFilter, districtFilter])
 
   return (
     <div className="page">
@@ -45,11 +49,12 @@ export default function Hospitals() {
           <Search size={16} color="#98A2B3" />
           <input placeholder="Search hospital or city" value={query} onChange={(e) => setQuery(e.target.value)} />
         </div>
-        <select className="select" value={state} onChange={(e) => setState(e.target.value)}>
-          <option>All</option>
-          <option>Karnataka</option>
-          <option>Telangana</option>
-        </select>
+        <LocationFilters
+          state={stateFilter}
+          district={districtFilter}
+          onStateChange={setStateFilter}
+          onDistrictChange={setDistrictFilter}
+        />
       </div>
       <div className="pills" style={{ marginBottom: 14 }}>
         {TABS.map((t) => (

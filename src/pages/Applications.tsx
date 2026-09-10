@@ -1,16 +1,22 @@
 import { Search } from 'lucide-react'
 import { useMemo, useState } from 'react'
+import LocationFilters from '../components/LocationFilters'
 import Modal from '../components/Modal'
 import StatusChip from '../components/StatusChip'
 import { applications as seed } from '../data/mock'
 import type { Application, ApplicationStatus } from '../types'
+import { matchesLocation } from '../utils/locationFilter'
 
 const TABS = ['All', 'Under Review', 'Shortlisted', 'Interview Scheduled', 'Offer', 'Rejected'] as const
+const EMPLOYMENT = ['All', 'Full Time', 'Part Time', 'Locum'] as const
 
 export default function Applications() {
   const [items, setItems] = useState<Application[]>(seed)
   const [tab, setTab] = useState<(typeof TABS)[number]>('All')
   const [query, setQuery] = useState('')
+  const [employment, setEmployment] = useState<(typeof EMPLOYMENT)[number]>('All')
+  const [stateFilter, setStateFilter] = useState('All')
+  const [districtFilter, setDistrictFilter] = useState('All')
   const [selected, setSelected] = useState<Application | null>(null)
 
   const filtered = useMemo(() => {
@@ -18,9 +24,12 @@ export default function Applications() {
       const q = query.toLowerCase()
       const matchesQuery =
         !q || app.applicant.toLowerCase().includes(q) || app.jobTitle.toLowerCase().includes(q)
-      return matchesQuery && (tab === 'All' || app.status === tab)
+      const matchesTab = tab === 'All' || app.status === tab
+      const matchesEmployment = employment === 'All' || app.employmentPreference === employment
+      const matchesLoc = matchesLocation(app, stateFilter, districtFilter)
+      return matchesQuery && matchesTab && matchesEmployment && matchesLoc
     })
-  }, [items, tab, query])
+  }, [items, tab, query, employment, stateFilter, districtFilter])
 
   function updateStatus(id: string, status: ApplicationStatus) {
     setItems((prev) => prev.map((a) => (a.id === id ? { ...a, status } : a)))
@@ -40,6 +49,23 @@ export default function Applications() {
           <Search size={16} color="#98A2B3" />
           <input placeholder="Search applicant or role" value={query} onChange={(e) => setQuery(e.target.value)} />
         </div>
+        <LocationFilters
+          state={stateFilter}
+          district={districtFilter}
+          onStateChange={setStateFilter}
+          onDistrictChange={setDistrictFilter}
+        />
+        <select
+          className="select"
+          value={employment}
+          onChange={(e) => setEmployment(e.target.value as (typeof EMPLOYMENT)[number])}
+        >
+          {EMPLOYMENT.map((t) => (
+            <option key={t} value={t}>
+              {t === 'All' ? 'All employment' : t}
+            </option>
+          ))}
+        </select>
       </div>
       <div className="pills" style={{ marginBottom: 14 }}>
         {TABS.map((t) => (
@@ -53,6 +79,7 @@ export default function Applications() {
           <thead>
             <tr>
               <th>Candidate</th>
+              <th>Looking for</th>
               <th>Role</th>
               <th>Hospital</th>
               <th>Applied</th>
@@ -69,10 +96,18 @@ export default function Applications() {
                     {app.role} · {app.experience}
                   </div>
                 </td>
+                <td>
+                  <StatusChip label={app.employmentPreference} />
+                  {app.timeAvailability && app.timeAvailability.length > 0 && (
+                    <div className="cell-sub">{app.timeAvailability.join(', ')}</div>
+                  )}
+                </td>
                 <td>{app.jobTitle}</td>
                 <td>
                   {app.hospital}
-                  <div className="cell-sub">{app.location}</div>
+                  <div className="cell-sub">
+                    {app.district}, {app.state}
+                  </div>
                 </td>
                 <td>{app.appliedOn}</td>
                 <td>
@@ -100,6 +135,10 @@ export default function Applications() {
           </p>
           <div className="detail-grid">
             <div className="meta">
+              <span>Looking for</span>
+              <strong>{selected.employmentPreference}</strong>
+            </div>
+            <div className="meta">
               <span>Phone</span>
               <strong>{selected.phone}</strong>
             </div>
@@ -111,8 +150,28 @@ export default function Applications() {
               <span>Experience</span>
               <strong>{selected.experience}</strong>
             </div>
+            <div className="meta">
+              <span>Location</span>
+              <strong>
+                {selected.district}, {selected.state}
+              </strong>
+            </div>
           </div>
-          <label style={{ fontSize: 12, fontWeight: 700 }}>Update status</label>
+          {selected.timeAvailability && selected.timeAvailability.length > 0 && (
+            <>
+              <p className="muted" style={{ marginTop: 12, marginBottom: 6 }}>
+                Time availability
+              </p>
+              <div className="pills">
+                {selected.timeAvailability.map((slot) => (
+                  <span key={slot} className="chip chip-review">
+                    {slot}
+                  </span>
+                ))}
+              </div>
+            </>
+          )}
+          <label style={{ fontSize: 12, fontWeight: 700, marginTop: 14, display: 'block' }}>Update status</label>
           <select
             className="select"
             style={{ width: '100%', marginTop: 8 }}

@@ -1,10 +1,12 @@
 import { Crown, Plus, Search } from 'lucide-react'
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import LocationFilters from '../components/LocationFilters'
 import Modal from '../components/Modal'
 import StatusChip from '../components/StatusChip'
 import { useDirectory } from '../data/directory'
 import type { Professional, SubscriptionBilling, SubscriptionLocationState } from '../types'
+import { matchesLocation } from '../utils/locationFilter'
 
 const TABS = ['Subscribers', 'Plans'] as const
 const BILLING_OPTIONS: SubscriptionBilling[] = ['Monthly', 'Yearly', 'Manual']
@@ -34,6 +36,8 @@ export default function Subscriptions() {
   const [userId, setUserId] = useState('')
   const [plan, setPlan] = useState('')
   const [billing, setBilling] = useState<SubscriptionBilling>('Manual')
+  const [stateFilter, setStateFilter] = useState('All')
+  const [districtFilter, setDistrictFilter] = useState('All')
 
   useEffect(() => {
     if (state?.plansTab) setTab('Plans')
@@ -44,14 +48,18 @@ export default function Subscriptions() {
   const filtered = useMemo(() => {
     return userSubscriptions.filter((s) => {
       const q = query.toLowerCase()
-      return (
+      const pro = professionals.find((p) => p.id === s.userId)
+      const matchesQuery =
         !q ||
         s.userName.toLowerCase().includes(q) ||
         s.email.toLowerCase().includes(q) ||
         s.plan.toLowerCase().includes(q)
-      )
+      const matchesLoc = pro
+        ? matchesLocation(pro, stateFilter, districtFilter)
+        : stateFilter === 'All' && districtFilter === 'All'
+      return matchesQuery && matchesLoc
     })
-  }, [userSubscriptions, query])
+  }, [userSubscriptions, professionals, query, stateFilter, districtFilter])
 
   const activeCount = userSubscriptions.filter((s) => s.status === 'Active').length
   const manualCount = userSubscriptions.filter((s) => s.billing === 'Manual').length
@@ -149,6 +157,12 @@ export default function Subscriptions() {
                 onChange={(e) => setQuery(e.target.value)}
               />
             </div>
+            <LocationFilters
+              state={stateFilter}
+              district={districtFilter}
+              onStateChange={setStateFilter}
+              onDistrictChange={setDistrictFilter}
+            />
           </div>
           <div className="card table-wrap">
             <table>

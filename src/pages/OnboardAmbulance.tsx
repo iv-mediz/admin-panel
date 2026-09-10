@@ -52,6 +52,8 @@ export default function OnboardAmbulance() {
       driver: form.driver,
       phone: form.phone,
       city: form.city,
+      district: form.city,
+      state: form.city === 'Hyderabad' ? 'Telangana' : 'Karnataka',
       base: form.base,
       status: 'Pending',
       vehiclePhotos: [
