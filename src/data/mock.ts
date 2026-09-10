@@ -6,10 +6,13 @@ import type {
   Application,
   Booking,
   City,
+  Franchise,
   Hospital,
   Job,
   Professional,
+  SubscriptionPlan,
   TeamMember,
+  UserSubscription,
   WeeklyStat,
 } from '../types'
 
@@ -332,6 +335,8 @@ export const professionals: Professional[] = [
     completion: 65,
     status: 'Active',
     applications: 2,
+    subscriptionPlan: 'Professional',
+    subscriptionStatus: 'Active',
   },
   {
     id: 'u2',
@@ -345,6 +350,8 @@ export const professionals: Professional[] = [
     completion: 88,
     status: 'Active',
     applications: 4,
+    subscriptionPlan: 'Premium',
+    subscriptionStatus: 'Active',
   },
   {
     id: 'u3',
@@ -358,6 +365,8 @@ export const professionals: Professional[] = [
     completion: 72,
     status: 'Active',
     applications: 1,
+    subscriptionPlan: 'Basic',
+    subscriptionStatus: 'Active',
   },
   {
     id: 'u4',
@@ -371,6 +380,8 @@ export const professionals: Professional[] = [
     completion: 54,
     status: 'Pending',
     applications: 1,
+    subscriptionPlan: 'Basic',
+    subscriptionStatus: 'None',
   },
   {
     id: 'u5',
@@ -384,6 +395,8 @@ export const professionals: Professional[] = [
     completion: 91,
     status: 'Active',
     applications: 3,
+    subscriptionPlan: 'Professional',
+    subscriptionStatus: 'Expired',
   },
   {
     id: 'u6',
@@ -397,6 +410,127 @@ export const professionals: Professional[] = [
     completion: 80,
     status: 'Active',
     applications: 2,
+    subscriptionPlan: 'Basic',
+    subscriptionStatus: 'None',
+  },
+]
+
+export const subscriptionPlans: SubscriptionPlan[] = [
+  {
+    id: 'plan-basic',
+    name: 'Basic',
+    monthlyPrice: 'Free',
+    yearlyPrice: 'Free',
+    features: ['Browse healthcare jobs', 'Apply to 5 jobs/month', 'Basic profile visibility', 'Email support'],
+    active: true,
+  },
+  {
+    id: 'plan-pro',
+    name: 'Professional',
+    monthlyPrice: '₹499',
+    yearlyPrice: '₹4,999',
+    features: [
+      'Unlimited job applications',
+      'Priority listing to employers',
+      'Ambulance booking access',
+      'Application status tracking',
+      'Priority support',
+    ],
+    active: true,
+  },
+  {
+    id: 'plan-premium',
+    name: 'Premium',
+    monthlyPrice: '₹999',
+    yearlyPrice: '₹9,999',
+    features: [
+      'Everything in Professional',
+      'Featured profile badge',
+      'Direct hospital connect',
+      'Salary insights & analytics',
+      '24/7 dedicated support',
+      'Free ambulance booking (2/month)',
+    ],
+    active: true,
+  },
+]
+
+export const userSubscriptions: UserSubscription[] = [
+  {
+    id: 'sub1',
+    userId: 'u1',
+    userName: 'Dr. Vineeth',
+    email: 'dr.vineeth@email.com',
+    plan: 'Professional',
+    billing: 'Monthly',
+    status: 'Active',
+    startedOn: '01 Aug 2026',
+    expiresOn: '01 Sep 2026',
+  },
+  {
+    id: 'sub2',
+    userId: 'u2',
+    userName: 'Ananya Sharma',
+    email: 'ananya.sharma@email.com',
+    plan: 'Premium',
+    billing: 'Yearly',
+    status: 'Active',
+    startedOn: '15 Jun 2026',
+    expiresOn: '15 Jun 2027',
+  },
+  {
+    id: 'sub3',
+    userId: 'u5',
+    userName: 'Sneha Reddy',
+    email: 'sneha.reddy@email.com',
+    plan: 'Professional',
+    billing: 'Manual',
+    status: 'Expired',
+    startedOn: '10 Jan 2026',
+    expiresOn: '10 Jul 2026',
+    activatedBy: 'Admin',
+  },
+]
+
+export const franchises: Franchise[] = [
+  {
+    id: 'fr1',
+    name: 'Mediz Telangana Franchise',
+    owner: 'Ramesh Gupta',
+    email: 'ramesh@medizfranchise.in',
+    phone: '+91 98490 11223',
+    stateId: 'st-ts',
+    stateName: 'Telangana',
+    cities: ['Hyderabad', 'Secunderabad', 'Warangal'],
+    commission: '12%',
+    status: 'Active',
+    joined: '12 Jan 2026',
+  },
+  {
+    id: 'fr2',
+    name: 'Karnataka Care Partners',
+    owner: 'Lakshmi Iyer',
+    email: 'lakshmi@karnatakacare.in',
+    phone: '+91 98860 44556',
+    stateId: 'st-ka',
+    stateName: 'Karnataka',
+    cities: ['Bengaluru', 'Mysuru'],
+    commission: '10%',
+    status: 'Active',
+    joined: '03 Mar 2026',
+  },
+  {
+    id: 'fr3',
+    name: 'AP Expansion Group',
+    owner: 'Venkat Rao',
+    email: 'venkat@apmediz.in',
+    phone: '+91 99087 66778',
+    stateId: 'st-ap',
+    stateName: 'Andhra Pradesh',
+    cities: ['Visakhapatnam', 'Vijayawada'],
+    commission: '15%',
+    status: 'Pending',
+    joined: '20 Aug 2026',
   },
 ]
 
@@ -411,6 +545,11 @@ export const fleet: AmbulanceVehicle[] = [
     city: 'Bengaluru',
     base: 'Koramangala',
     status: 'Active',
+    vehiclePhotos: [
+      { label: 'Front view', uploadedAt: '28 Aug 2026' },
+      { label: 'Side view', uploadedAt: '28 Aug 2026' },
+      { label: 'Interior', uploadedAt: '28 Aug 2026' },
+    ],
   },
   {
     id: 'v2',
@@ -422,6 +561,11 @@ export const fleet: AmbulanceVehicle[] = [
     city: 'Bengaluru',
     base: 'Indiranagar',
     status: 'Active',
+    vehiclePhotos: [
+      { label: 'Front view', uploadedAt: '15 Jul 2026' },
+      { label: 'Side view', uploadedAt: '15 Jul 2026' },
+      { label: 'Interior', uploadedAt: '15 Jul 2026' },
+    ],
   },
   {
     id: 'v3',
@@ -433,6 +577,11 @@ export const fleet: AmbulanceVehicle[] = [
     city: 'Bengaluru',
     base: 'HSR Layout',
     status: 'Active',
+    vehiclePhotos: [
+      { label: 'Front view', uploadedAt: '02 Sep 2026' },
+      { label: 'Side view', uploadedAt: '02 Sep 2026' },
+      { label: 'Interior', uploadedAt: '02 Sep 2026' },
+    ],
   },
   {
     id: 'v4',
@@ -444,6 +593,11 @@ export const fleet: AmbulanceVehicle[] = [
     city: 'Hyderabad',
     base: 'Banjara Hills',
     status: 'Pending',
+    vehiclePhotos: [
+      { label: 'Front view', uploadedAt: '10 Sep 2026' },
+      { label: 'Side view', uploadedAt: '10 Sep 2026' },
+      { label: 'Interior', uploadedAt: '10 Sep 2026' },
+    ],
   },
 ]
 

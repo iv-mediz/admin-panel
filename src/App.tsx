@@ -15,6 +15,8 @@ import Professionals from './pages/Professionals'
 import Settings from './pages/Settings'
 import States from './pages/States'
 import Cities from './pages/Cities'
+import Franchises from './pages/Franchises'
+import Subscriptions from './pages/Subscriptions'
 import Team from './pages/Team'
 
 function Protected({ children }: { children: ReactNode }) {
@@ -47,6 +49,8 @@ export default function App() {
         <Route path="/ambulances/onboard" element={<OnboardAmbulance />} />
         <Route path="/states" element={<States />} />
         <Route path="/cities" element={<Cities />} />
+        <Route path="/franchises" element={<Franchises />} />
+        <Route path="/subscriptions" element={<Subscriptions />} />
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/settings" element={<Settings />} />
       </Route>

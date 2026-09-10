@@ -54,6 +54,11 @@ export default function OnboardAmbulance() {
       city: form.city,
       base: form.base,
       status: 'Pending',
+      vehiclePhotos: [
+        { label: 'Front view', uploadedAt: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) },
+        { label: 'Side view', uploadedAt: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) },
+        { label: 'Interior', uploadedAt: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) },
+      ],
     })
     navigate('/ambulances', { replace: true, state: { justOnboarded: form.vehicle } })
   }

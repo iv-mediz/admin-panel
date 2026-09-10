@@ -2,12 +2,13 @@ import { Search } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import Modal from '../components/Modal'
 import StatusChip from '../components/StatusChip'
-import { professionals } from '../data/mock'
+import { useDirectory } from '../data/directory'
 import type { Professional } from '../types'
 
 const ROLES = ['All', 'Doctor', 'Staff Nurse', 'OT Nurse', 'Pharmacist', 'Allied Health'] as const
 
 export default function Professionals() {
+  const { professionals } = useDirectory()
   const [query, setQuery] = useState('')
   const [role, setRole] = useState<(typeof ROLES)[number]>('All')
   const [selected, setSelected] = useState<Professional | null>(null)
@@ -18,7 +19,7 @@ export default function Professionals() {
       const matchesQuery = !q || u.name.toLowerCase().includes(q) || u.specialization.toLowerCase().includes(q)
       return matchesQuery && (role === 'All' || u.role === role)
     })
-  }, [query, role])
+  }, [professionals, query, role])
 
   return (
     <div className="page">
@@ -49,6 +50,7 @@ export default function Professionals() {
               <th>Role</th>
               <th>Location</th>
               <th>Profile</th>
+              <th>Subscription</th>
               <th>Applications</th>
               <th>Status</th>
               <th />
@@ -78,6 +80,16 @@ export default function Professionals() {
                     </div>
                     <span className="muted">{user.completion}%</span>
                   </div>
+                </td>
+                <td>
+                  {user.subscriptionPlan ? (
+                    <>
+                      <div className="cell-title">{user.subscriptionPlan}</div>
+                      <div className="cell-sub">{user.subscriptionStatus ?? 'None'}</div>
+                    </>
+                  ) : (
+                    <span className="muted">None</span>
+                  )}
                 </td>
                 <td>{user.applications}</td>
                 <td>

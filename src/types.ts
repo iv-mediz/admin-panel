@@ -63,6 +63,8 @@ export interface Professional {
   completion: number
   status: 'Active' | 'Pending'
   applications: number
+  subscriptionPlan?: SubscriptionPlanName
+  subscriptionStatus?: SubscriptionStatus
 }
 
 export interface Hospital {
@@ -90,6 +92,7 @@ export interface AmbulanceVehicle {
   city: string
   base: string
   status: VehicleStatus
+  vehiclePhotos?: VehiclePhoto[]
 }
 
 export interface Booking {
@@ -140,6 +143,51 @@ export interface WeeklyStat {
 }
 
 export type LocationStatus = 'Active' | 'Paused' | 'Pending'
+export type SubscriptionPlanName = 'Basic' | 'Professional' | 'Premium'
+export type SubscriptionStatus = 'Active' | 'Expired' | 'None' | 'Cancelled'
+export type SubscriptionBilling = 'Monthly' | 'Yearly' | 'Manual'
+export type FranchiseStatus = 'Active' | 'Pending' | 'Suspended'
+
+export interface VehiclePhoto {
+  label: string
+  uploadedAt?: string
+}
+
+export interface SubscriptionPlan {
+  id: string
+  name: SubscriptionPlanName
+  monthlyPrice: string
+  yearlyPrice: string
+  features: string[]
+  active: boolean
+}
+
+export interface UserSubscription {
+  id: string
+  userId: string
+  userName: string
+  email: string
+  plan: SubscriptionPlanName
+  billing: SubscriptionBilling
+  status: SubscriptionStatus
+  startedOn: string
+  expiresOn: string | null
+  activatedBy?: string
+}
+
+export interface Franchise {
+  id: string
+  name: string
+  owner: string
+  email: string
+  phone: string
+  stateId: string
+  stateName: string
+  cities: string[]
+  commission: string
+  status: FranchiseStatus
+  joined: string
+}
 
 export interface AppState {
   id: string

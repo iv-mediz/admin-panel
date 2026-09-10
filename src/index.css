@@ -1037,11 +1037,144 @@ tbody tr:hover {
   font-weight: 800;
 }
 
+.plan-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+.plan-card {
+  position: relative;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+  background: #fff;
+}
+
+.plan-badge {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 999px;
+}
+
+.plan-card h4 {
+  font-size: 18px;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+
+.plan-price {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.plan-price strong {
+  font-size: 24px;
+  color: var(--navy-deep);
+}
+
+.plan-features {
+  list-style: none;
+  margin: 0 0 14px;
+  padding: 0;
+}
+
+.plan-features li {
+  font-size: 13px;
+  color: var(--text-secondary);
+  padding: 5px 0 5px 16px;
+  position: relative;
+}
+
+.plan-features li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--primary-soft);
+  color: var(--navy);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.tag-btn {
+  border: 1px solid var(--border);
+  background: #fff;
+  cursor: pointer;
+}
+
+.tag-btn.active {
+  background: var(--primary-soft);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.vehicle-photo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.vehicle-photo {
+  aspect-ratio: 1;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: linear-gradient(145deg, #e7f7f8 0%, #f8fafc 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px;
+  text-align: center;
+}
+
+.vehicle-photo svg {
+  color: var(--primary);
+}
+
+.vehicle-photo span {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--navy);
+}
+
+.vehicle-photo small {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
 @media (max-width: 1100px) {
   .stats,
   .grid-2,
   .form-grid,
-  .detail-grid {
+  .detail-grid,
+  .plan-grid {
     grid-template-columns: 1fr 1fr;
   }
 }

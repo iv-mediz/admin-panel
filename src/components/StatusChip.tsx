@@ -17,6 +17,9 @@ const CLASS_MAP: Record<string, string> = {
   Locum: 'chip-locum',
   'Part Time': 'chip-part',
   'Full Time': 'chip-full',
+  Expired: 'chip-paused',
+  Suspended: 'chip-rejected',
+  None: 'chip-pending',
 }
 
 export default function StatusChip({ label }: { label: string }) {

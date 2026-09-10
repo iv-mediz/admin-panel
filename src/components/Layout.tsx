@@ -12,6 +12,8 @@ import {
   MapPinned,
   Menu,
   Settings,
+  Store,
+  CreditCard,
   UserRound,
   Users,
   UsersRound,
@@ -52,11 +54,13 @@ const NAV: NavGroup[] = [
     items: [
       { to: '/states', label: 'States', icon: MapPinned },
       { to: '/cities', label: 'Cities', icon: MapPin },
+      { to: '/franchises', label: 'Franchises', icon: Store },
     ],
   },
   {
     label: 'More',
     items: [
+      { to: '/subscriptions', label: 'Subscriptions', icon: CreditCard },
       { to: '/notifications', label: 'Notifications', icon: Bell },
       { to: '/settings', label: 'Settings', icon: Settings },
     ],
@@ -76,6 +80,8 @@ function pageMeta(path: string): [string, string] {
     '/team': ['Team', 'Internal staff who run the iv mediz admin panel'],
     '/states': ['States', 'States where iv mediz is live'],
     '/cities': ['Cities', 'Cities and districts for jobs and ambulance pickup'],
+    '/franchises': ['Franchises', 'Partners who manage iv mediz in assigned locations'],
+    '/subscriptions': ['Subscriptions', 'Plans and manual activation for mobile users'],
     '/notifications': ['Notifications', 'Alerts sent to the mobile app'],
     '/settings': ['Settings', 'Admin panel and brand preferences'],
   }
