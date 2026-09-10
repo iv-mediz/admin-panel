@@ -59,6 +59,7 @@ interface DirectoryContextValue {
     plan: SubscriptionPlanName
     billing: SubscriptionBilling
     expiresOn: string | null
+    notes?: string
   }) => void
   cancelSubscription: (userId: string) => void
 }
@@ -105,13 +106,13 @@ export function DirectoryProvider({ children }: { children: ReactNode }) {
         setCities((prev) => prev.map((c) => (c.id === id ? { ...c, status } : c))),
       setFranchiseStatus: (id, status) =>
         setFranchises((prev) => prev.map((f) => (f.id === id ? { ...f, status } : f))),
-      activateSubscription: ({ userId, userName, email, plan, billing, expiresOn }) => {
+      activateSubscription: ({ userId, userName, email, plan, billing, expiresOn, notes }) => {
         const startedOn = new Date().toLocaleDateString('en-IN', {
           day: '2-digit',
           month: 'short',
           year: 'numeric',
         })
-        const status: SubscriptionStatus = plan === 'Basic' ? 'Active' : 'Active'
+        const status: SubscriptionStatus = 'Active'
         setUserSubscriptions((prev) => {
           const existing = prev.find((s) => s.userId === userId)
           const next: UserSubscription = {
@@ -125,6 +126,7 @@ export function DirectoryProvider({ children }: { children: ReactNode }) {
             startedOn,
             expiresOn,
             activatedBy: billing === 'Manual' ? 'Admin' : existing?.activatedBy,
+            notes,
           }
           return existing ? prev.map((s) => (s.userId === userId ? next : s)) : [next, ...prev]
         })

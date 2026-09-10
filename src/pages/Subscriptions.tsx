@@ -1,31 +1,19 @@
 import { Crown, Plus, Search } from 'lucide-react'
-import { useMemo, useState, type FormEvent } from 'react'
-import Modal from '../components/Modal'
+import { useMemo, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import StatusChip from '../components/StatusChip'
 import { useDirectory } from '../data/directory'
-import type { Professional, SubscriptionBilling, SubscriptionPlanName } from '../types'
+import type { SubscriptionLocationState } from '../types'
 
 const TABS = ['Subscribers', 'Plans'] as const
-const PLAN_OPTIONS: SubscriptionPlanName[] = ['Basic', 'Professional', 'Premium']
-const BILLING_OPTIONS: SubscriptionBilling[] = ['Monthly', 'Yearly', 'Manual']
-
-function expiryFor(billing: SubscriptionBilling): string | null {
-  const d = new Date()
-  if (billing === 'Monthly') d.setMonth(d.getMonth() + 1)
-  else if (billing === 'Yearly') d.setFullYear(d.getFullYear() + 1)
-  else return null
-  return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
-}
 
 export default function Subscriptions() {
-  const { subscriptionPlans, userSubscriptions, professionals, activateSubscription, cancelSubscription } =
-    useDirectory()
+  const navigate = useNavigate()
+  const location = useLocation()
+  const { subscriptionPlans, userSubscriptions, professionals, cancelSubscription } = useDirectory()
   const [tab, setTab] = useState<(typeof TABS)[number]>('Subscribers')
   const [query, setQuery] = useState('')
-  const [open, setOpen] = useState(false)
-  const [userId, setUserId] = useState('')
-  const [plan, setPlan] = useState<SubscriptionPlanName>('Professional')
-  const [billing, setBilling] = useState<SubscriptionBilling>('Manual')
+  const notice = (location.state as SubscriptionLocationState | null)?.justActivated
 
   const filtered = useMemo(() => {
     return userSubscriptions.filter((s) => {
@@ -42,24 +30,6 @@ export default function Subscriptions() {
   const activeCount = userSubscriptions.filter((s) => s.status === 'Active').length
   const manualCount = userSubscriptions.filter((s) => s.billing === 'Manual').length
 
-  function submit(e: FormEvent) {
-    e.preventDefault()
-    const user = professionals.find((p) => p.id === userId)
-    if (!user) return
-    activateSubscription({
-      userId: user.id,
-      userName: user.name,
-      email: user.email,
-      plan,
-      billing,
-      expiresOn: expiryFor(billing),
-    })
-    setOpen(false)
-    setUserId('')
-    setPlan('Professional')
-    setBilling('Manual')
-  }
-
   return (
     <div className="page">
       <div className="page-head">
@@ -67,11 +37,17 @@ export default function Subscriptions() {
           <h3>Manage subscriptions</h3>
           <p>View plans, active subscribers, and manually activate a subscription for any user.</p>
         </div>
-        <button className="btn btn-primary" onClick={() => setOpen(true)}>
+        <button className="btn btn-primary" onClick={() => navigate('/subscriptions/create')}>
           <Plus size={16} />
           Activate for user
         </button>
       </div>
+
+      {notice && (
+        <div className="notice">
+          Subscription activated for <strong>{notice}</strong>. It is live in the mobile app.
+        </div>
+      )}
 
       <section className="stats">
         <article className="stat-card">
@@ -187,52 +163,6 @@ export default function Subscriptions() {
             </article>
           ))}
         </div>
-      )}
-
-      {open && (
-        <Modal title="Activate subscription for user" onClose={() => setOpen(false)}>
-          <p className="muted" style={{ marginBottom: 14 }}>
-            Grant a plan to an individual professional. Manual activations appear in the app immediately.
-          </p>
-          <form className="form-grid" onSubmit={submit}>
-            <div className="field full">
-              <label>Professional</label>
-              <select value={userId} onChange={(e) => setUserId(e.target.value)} required>
-                <option value="">Select user</option>
-                {professionals.map((p: Professional) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name} — {p.email}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="field">
-              <label>Plan</label>
-              <select value={plan} onChange={(e) => setPlan(e.target.value as SubscriptionPlanName)}>
-                {PLAN_OPTIONS.map((p) => (
-                  <option key={p} value={p}>
-                    {p}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="field">
-              <label>Billing</label>
-              <select value={billing} onChange={(e) => setBilling(e.target.value as SubscriptionBilling)}>
-                {BILLING_OPTIONS.map((b) => (
-                  <option key={b} value={b}>
-                    {b}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="field full">
-              <button className="btn btn-primary" type="submit" disabled={!userId}>
-                Activate subscription
-              </button>
-            </div>
-          </form>
-        </Modal>
       )}
     </div>
   )

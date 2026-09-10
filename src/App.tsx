@@ -16,6 +16,7 @@ import Settings from './pages/Settings'
 import States from './pages/States'
 import Cities from './pages/Cities'
 import Franchises from './pages/Franchises'
+import CreateSubscription from './pages/CreateSubscription'
 import Subscriptions from './pages/Subscriptions'
 import Team from './pages/Team'
 
@@ -51,6 +52,7 @@ export default function App() {
         <Route path="/cities" element={<Cities />} />
         <Route path="/franchises" element={<Franchises />} />
         <Route path="/subscriptions" element={<Subscriptions />} />
+        <Route path="/subscriptions/create" element={<CreateSubscription />} />
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/settings" element={<Settings />} />
       </Route>

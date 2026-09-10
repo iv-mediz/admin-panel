@@ -1104,6 +1104,88 @@ tbody tr:hover {
   font-weight: 700;
 }
 
+.user-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 360px;
+  overflow-y: auto;
+}
+
+.user-pick {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: #fff;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.user-pick:hover {
+  border-color: var(--primary);
+}
+
+.user-pick.selected {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+}
+
+.user-pick-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.user-pick-main strong {
+  font-size: 14px;
+}
+
+.user-pick-side {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.plan-pick-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.plan-pick {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: #fff;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.plan-pick:hover {
+  border-color: var(--primary);
+}
+
+.plan-pick.selected {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+}
+
+.plan-pick strong {
+  font-size: 15px;
+}
+
 .tag-row {
   display: flex;
   flex-wrap: wrap;

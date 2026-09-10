@@ -173,6 +173,11 @@ export interface UserSubscription {
   startedOn: string
   expiresOn: string | null
   activatedBy?: string
+  notes?: string
+}
+
+export interface SubscriptionLocationState {
+  justActivated?: string
 }
 
 export interface Franchise {
