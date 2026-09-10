@@ -22,7 +22,6 @@ import type {
   Professional,
   SubscriptionBilling,
   SubscriptionPlan,
-  SubscriptionPlanName,
   SubscriptionStatus,
   TeamMember,
   TeamStatus,
@@ -52,11 +51,12 @@ interface DirectoryContextValue {
   setStateStatus: (id: string, status: LocationStatus) => void
   setCityStatus: (id: string, status: LocationStatus) => void
   setFranchiseStatus: (id: string, status: FranchiseStatus) => void
+  addSubscriptionPlan: (plan: SubscriptionPlan) => void
   activateSubscription: (input: {
     userId: string
     userName: string
     email: string
-    plan: SubscriptionPlanName
+    plan: string
     billing: SubscriptionBilling
     expiresOn: string | null
     notes?: string
@@ -73,7 +73,7 @@ export function DirectoryProvider({ children }: { children: ReactNode }) {
   const [states, setStates] = useState<AppState[]>(seedStates)
   const [cities, setCities] = useState<City[]>(seedCities)
   const [professionals, setProfessionals] = useState<Professional[]>(seedProfessionals)
-  const [subscriptionPlans] = useState<SubscriptionPlan[]>(seedPlans)
+  const [subscriptionPlans, setSubscriptionPlans] = useState<SubscriptionPlan[]>(seedPlans)
   const [userSubscriptions, setUserSubscriptions] = useState<UserSubscription[]>(seedSubscriptions)
   const [franchises, setFranchises] = useState<Franchise[]>(seedFranchises)
 
@@ -106,6 +106,7 @@ export function DirectoryProvider({ children }: { children: ReactNode }) {
         setCities((prev) => prev.map((c) => (c.id === id ? { ...c, status } : c))),
       setFranchiseStatus: (id, status) =>
         setFranchises((prev) => prev.map((f) => (f.id === id ? { ...f, status } : f))),
+      addSubscriptionPlan: (plan) => setSubscriptionPlans((prev) => [...prev, plan]),
       activateSubscription: ({ userId, userName, email, plan, billing, expiresOn, notes }) => {
         const startedOn = new Date().toLocaleDateString('en-IN', {
           day: '2-digit',

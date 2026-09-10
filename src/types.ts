@@ -143,7 +143,7 @@ export interface WeeklyStat {
 }
 
 export type LocationStatus = 'Active' | 'Paused' | 'Pending'
-export type SubscriptionPlanName = 'Basic' | 'Professional' | 'Premium'
+export type SubscriptionPlanName = string
 export type SubscriptionStatus = 'Active' | 'Expired' | 'None' | 'Cancelled'
 export type SubscriptionBilling = 'Monthly' | 'Yearly' | 'Manual'
 export type FranchiseStatus = 'Active' | 'Pending' | 'Suspended'
@@ -155,11 +155,12 @@ export interface VehiclePhoto {
 
 export interface SubscriptionPlan {
   id: string
-  name: SubscriptionPlanName
+  name: string
   monthlyPrice: string
   yearlyPrice: string
   features: string[]
   active: boolean
+  popular?: boolean
 }
 
 export interface UserSubscription {
@@ -178,6 +179,8 @@ export interface UserSubscription {
 
 export interface SubscriptionLocationState {
   justActivated?: string
+  justCreatedPlan?: string
+  plansTab?: boolean
 }
 
 export interface Franchise {

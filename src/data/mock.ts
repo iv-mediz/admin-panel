@@ -429,6 +429,7 @@ export const subscriptionPlans: SubscriptionPlan[] = [
     name: 'Professional',
     monthlyPrice: '₹499',
     yearlyPrice: '₹4,999',
+    popular: true,
     features: [
       'Unlimited job applications',
       'Priority listing to employers',

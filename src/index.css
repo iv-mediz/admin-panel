@@ -1104,86 +1104,55 @@ tbody tr:hover {
   font-weight: 700;
 }
 
-.user-picker {
+.feature-add-row {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
-  max-height: 360px;
-  overflow-y: auto;
+  gap: 10px;
 }
 
-.user-pick {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  width: 100%;
-  padding: 12px 14px;
+.feature-add-row input {
+  flex: 1;
+  padding: 10px 12px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  background: #fff;
-  text-align: left;
-  cursor: pointer;
-  transition: border-color 0.15s, background 0.15s;
-}
-
-.user-pick:hover {
-  border-color: var(--primary);
-}
-
-.user-pick.selected {
-  border-color: var(--primary);
-  background: var(--primary-soft);
-}
-
-.user-pick-main {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.user-pick-main strong {
   font-size: 14px;
 }
 
-.user-pick-side {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-shrink: 0;
-}
-
-.plan-pick-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-}
-
-.plan-pick {
-  position: relative;
+.feature-edit-list {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 4px;
-  padding: 14px;
+  gap: 8px;
+}
+
+.feature-edit-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: #fff;
+  font-size: 14px;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
   cursor: pointer;
-  transition: border-color 0.15s, background 0.15s;
 }
 
-.plan-pick:hover {
-  border-color: var(--primary);
+.field-hint {
+  font-size: 13px;
+  margin: -6px 0 0;
 }
 
-.plan-pick.selected {
-  border-color: var(--primary);
-  background: var(--primary-soft);
-}
-
-.plan-pick strong {
-  font-size: 15px;
+.field-hint.error {
+  color: #d92d20;
 }
 
 .tag-row {

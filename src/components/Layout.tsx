@@ -70,7 +70,7 @@ const NAV: NavGroup[] = [
 function pageMeta(path: string): [string, string] {
   if (path.startsWith('/hospitals/onboard')) return ['Onboard hospital', 'Register a hospital partner']
   if (path.startsWith('/ambulances/onboard')) return ['Onboard ambulance', 'Register an operator and vehicle']
-  if (path.startsWith('/subscriptions/create')) return ['Activate subscription', 'Grant a plan to a mobile user']
+  if (path.startsWith('/subscriptions/plans/create')) return ['Create plan', 'Define pricing and features for mobile users']
   if (path.startsWith('/hospitals')) return ['Hospitals', 'Onboard and approve partner hospitals']
   if (path.startsWith('/ambulances')) return ['Ambulances', 'Onboard fleet and review trip bookings']
   const map: Record<string, [string, string]> = {
