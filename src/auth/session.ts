@@ -20,7 +20,7 @@ export function getAdminUser(): AdminUser | null {
 }
 
 export function isAuthenticated(): boolean {
-  if (hasApiBackend) {
+  if (hasApiBackend()) {
     return !!getAccessToken()
   }
   return localStorage.getItem(LEGACY_FLAG) === '1'

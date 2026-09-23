@@ -14,7 +14,7 @@ export async function apiRequest<T>(
   path: string,
   options: RequestInit = {},
 ): Promise<T> {
-  if (!hasApiBackend) {
+  if (!hasApiBackend()) {
     throw new ApiError('VITE_API_BASE_URL is not configured', 0)
   }
 

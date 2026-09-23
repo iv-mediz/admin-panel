@@ -2,7 +2,7 @@ import { useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { sendAdminOtp, verifyAdminOtp } from '../api/auth'
 import { ApiError } from '../api/http'
-import { apiBaseUrl, hasApiBackend, isDevBackend } from '../config/api'
+import { getApiBaseUrl, hasApiBackend, isDevBackend } from '../config/api'
 import { setApiSession, setMockSession } from '../auth/session'
 
 const DEV_OTP = '123456'
@@ -18,14 +18,14 @@ export default function Login() {
   const otpRefs = useRef<Array<HTMLInputElement | null>>([])
 
   const otpValue = otp.join('')
-  const showDevOtp = (isDevBackend() || !hasApiBackend) && !!devOtp
+  const showDevOtp = (isDevBackend() || !hasApiBackend()) && !!devOtp
 
   async function sendOtp(e: FormEvent) {
     e.preventDefault()
     setLoading(true)
     setError(null)
     try {
-      if (hasApiBackend) {
+      if (hasApiBackend()) {
         const result = await sendAdminOtp(email.trim())
         setDevOtp(result.devOtp ?? (isDevBackend() ? DEV_OTP : null))
       } else {
@@ -46,7 +46,7 @@ export default function Login() {
     setLoading(true)
     setError(null)
     try {
-      if (hasApiBackend) {
+      if (hasApiBackend()) {
         const result = await verifyAdminOtp(email.trim(), otpValue)
         setApiSession(result.accessToken, result.user)
       } else if (otpValue === DEV_OTP) {
@@ -107,9 +107,9 @@ export default function Login() {
           <form className="login-box" onSubmit={sendOtp}>
             <h3>Welcome back</h3>
             <p>Sign in to the iv mediz admin panel with email OTP</p>
-            {hasApiBackend ? (
+            {hasApiBackend() ? (
               <p className="hint" style={{ marginBottom: 12 }}>
-                API: <code>{apiBaseUrl}</code>
+                API: <code>{getApiBaseUrl()}</code>
               </p>
             ) : (
               <p className="hint" style={{ marginBottom: 12 }}>

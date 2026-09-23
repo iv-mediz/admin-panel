@@ -1,4 +1,4 @@
-import { apiBaseUrl, hasApiBackend, isDevBackend } from '../config/api'
+import { getApiBaseUrl, hasApiBackend, isDevBackend } from '../config/api'
 import { getAdminUser } from '../auth/session'
 
 export default function Settings() {
@@ -16,7 +16,7 @@ export default function Settings() {
             <label>Backend URL</label>
             <input
               readOnly
-              value={hasApiBackend ? apiBaseUrl : '(not set — demo mode)'}
+              value={hasApiBackend() ? getApiBaseUrl() : '(not set — demo mode)'}
             />
           </div>
           <div className="field">
@@ -24,7 +24,7 @@ export default function Settings() {
             <input
               readOnly
               value={
-                !hasApiBackend
+                !hasApiBackend()
                   ? 'UI only'
                   : isDevBackend()
                     ? 'Dev / staging API'
