@@ -1,24 +1,25 @@
-import { createContext, useContext, useMemo, useState, type ReactNode } from 'react'
 import {
-  cities as seedCities,
-  fleet as seedFleet,
-  franchises as seedFranchises,
-  hospitals as seedHospitals,
-  professionals as seedProfessionals,
-  states as seedStates,
-  subscriptionPlans as seedPlans,
-  team as seedTeam,
-  userSubscriptions as seedSubscriptions,
-} from './mock'
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react'
+import * as adminApi from '../api/admin'
+import { ApiError } from '../api/http'
+import { hasApiBackend } from '../config/api'
 import type {
   AmbulanceVehicle,
+  Application,
+  AppNotification,
   AppState,
+  Booking,
   City,
   Franchise,
-  FranchiseStatus,
   Hospital,
-  HospitalStatus,
-  LocationStatus,
+  Job,
   Professional,
   EntitySubscription,
   SubscriptionAudience,
@@ -26,11 +27,22 @@ import type {
   SubscriptionPlan,
   SubscriptionStatus,
   TeamMember,
+  FranchiseStatus,
+  HospitalStatus,
+  LocationStatus,
   TeamStatus,
   VehicleStatus,
+  ApplicationStatus,
 } from '../types'
 
 interface DirectoryContextValue {
+  loading: boolean
+  error: string | null
+  refresh: () => Promise<void>
+  jobs: Job[]
+  applications: Application[]
+  bookings: Booking[]
+  notifications: AppNotification[]
   hospitals: Hospital[]
   fleet: AmbulanceVehicle[]
   team: TeamMember[]
@@ -40,6 +52,8 @@ interface DirectoryContextValue {
   subscriptionPlans: SubscriptionPlan[]
   userSubscriptions: EntitySubscription[]
   franchises: Franchise[]
+  setJobs: React.Dispatch<React.SetStateAction<Job[]>>
+  setApplications: React.Dispatch<React.SetStateAction<Application[]>>
   addHospital: (hospital: Hospital) => void
   addVehicle: (vehicle: AmbulanceVehicle) => void
   addMember: (member: TeamMember) => void
@@ -55,6 +69,7 @@ interface DirectoryContextValue {
   setCityStatus: (id: string, status: LocationStatus) => void
   setFranchiseStatus: (id: string, status: FranchiseStatus) => void
   addSubscriptionPlan: (plan: SubscriptionPlan) => void
+  updateApplicationStatus: (id: string, status: ApplicationStatus) => void
   activateSubscription: (input: {
     subscriberId: string
     subscriberType: SubscriptionAudience
@@ -70,19 +85,114 @@ interface DirectoryContextValue {
 
 const DirectoryContext = createContext<DirectoryContextValue | null>(null)
 
+async function loadAllData() {
+  const [
+    jobs,
+    applications,
+    bookings,
+    hospitals,
+    fleet,
+    team,
+    states,
+    cities,
+    professionals,
+    subscriptionPlans,
+    userSubscriptions,
+    franchises,
+    notifications,
+  ] = await Promise.all([
+    adminApi.fetchJobs(),
+    adminApi.fetchApplications(),
+    adminApi.fetchBookings(),
+    adminApi.fetchHospitals(),
+    adminApi.fetchFleet(),
+    adminApi.fetchTeam(),
+    adminApi.fetchStates(),
+    adminApi.fetchCities(),
+    adminApi.fetchProfessionals(),
+    adminApi.fetchSubscriptionPlans(),
+    adminApi.fetchSubscriptions(),
+    adminApi.fetchFranchises(),
+    adminApi.fetchNotifications(),
+  ])
+  return {
+    jobs,
+    applications,
+    bookings,
+    hospitals,
+    fleet,
+    team,
+    states,
+    cities,
+    professionals,
+    subscriptionPlans,
+    userSubscriptions,
+    franchises,
+    notifications,
+  }
+}
+
 export function DirectoryProvider({ children }: { children: ReactNode }) {
-  const [hospitals, setHospitals] = useState<Hospital[]>(seedHospitals)
-  const [fleet, setFleet] = useState<AmbulanceVehicle[]>(seedFleet)
-  const [team, setTeam] = useState<TeamMember[]>(seedTeam)
-  const [states, setStates] = useState<AppState[]>(seedStates)
-  const [cities, setCities] = useState<City[]>(seedCities)
-  const [professionals, setProfessionals] = useState<Professional[]>(seedProfessionals)
-  const [subscriptionPlans, setSubscriptionPlans] = useState<SubscriptionPlan[]>(seedPlans)
-  const [userSubscriptions, setUserSubscriptions] = useState<EntitySubscription[]>(seedSubscriptions)
-  const [franchises, setFranchises] = useState<Franchise[]>(seedFranchises)
+  const [loading, setLoading] = useState(hasApiBackend())
+  const [error, setError] = useState<string | null>(null)
+  const [jobs, setJobs] = useState<Job[]>([])
+  const [applications, setApplications] = useState<Application[]>([])
+  const [bookings, setBookings] = useState<Booking[]>([])
+  const [notifications, setNotifications] = useState<AppNotification[]>([])
+  const [hospitals, setHospitals] = useState<Hospital[]>([])
+  const [fleet, setFleet] = useState<AmbulanceVehicle[]>([])
+  const [team, setTeam] = useState<TeamMember[]>([])
+  const [states, setStates] = useState<AppState[]>([])
+  const [cities, setCities] = useState<City[]>([])
+  const [professionals, setProfessionals] = useState<Professional[]>([])
+  const [subscriptionPlans, setSubscriptionPlans] = useState<SubscriptionPlan[]>([])
+  const [userSubscriptions, setUserSubscriptions] = useState<EntitySubscription[]>([])
+  const [franchises, setFranchises] = useState<Franchise[]>([])
+
+  const refresh = useCallback(async () => {
+    if (!hasApiBackend()) return
+    setLoading(true)
+    setError(null)
+    try {
+      const data = await loadAllData()
+      setJobs(data.jobs)
+      setApplications(data.applications)
+      setBookings(data.bookings)
+      setHospitals(data.hospitals)
+      setFleet(data.fleet)
+      setTeam(data.team)
+      setStates(data.states)
+      setCities(data.cities)
+      setProfessionals(data.professionals)
+      setSubscriptionPlans(data.subscriptionPlans)
+      setUserSubscriptions(
+        data.userSubscriptions.map((s) => ({
+          ...s,
+          email: s.email ?? '',
+        })),
+      )
+      setFranchises(data.franchises)
+      setNotifications(data.notifications)
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : 'Failed to load data from API')
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    void refresh()
+  }, [refresh])
 
   const value = useMemo<DirectoryContextValue>(
     () => ({
+      loading,
+      error,
+      refresh,
+      jobs,
+      applications,
+      bookings,
+      notifications,
       hospitals,
       fleet,
       team,
@@ -92,31 +202,126 @@ export function DirectoryProvider({ children }: { children: ReactNode }) {
       subscriptionPlans,
       userSubscriptions,
       franchises,
-      addHospital: (hospital) => setHospitals((prev) => [hospital, ...prev]),
-      addVehicle: (vehicle) => setFleet((prev) => [vehicle, ...prev]),
-      addMember: (member) => setTeam((prev) => [member, ...prev]),
-      addState: (state) => setStates((prev) => [state, ...prev]),
-      addCity: (city) => setCities((prev) => [city, ...prev]),
-      addFranchise: (franchise) => setFranchises((prev) => [franchise, ...prev]),
-      addProfessional: (professional) => setProfessionals((prev) => [professional, ...prev]),
-      removeProfessional: (id) => {
-        setProfessionals((prev) => prev.filter((p) => p.id !== id))
-        setUserSubscriptions((prev) => prev.filter((s) => !(s.subscriberId === id && s.subscriberType === 'Employee')))
+      setJobs,
+      setApplications,
+      addHospital: (hospital) => {
+        if (hasApiBackend()) {
+          void adminApi.createHospital(hospital).then((created) => {
+            setHospitals((prev) => [created, ...prev])
+          })
+          return
+        }
+        setHospitals((prev) => [hospital, ...prev])
       },
-      setHospitalStatus: (id, status) =>
-        setHospitals((prev) => prev.map((h) => (h.id === id ? { ...h, status } : h))),
-      setVehicleStatus: (id, status) =>
-        setFleet((prev) => prev.map((v) => (v.id === id ? { ...v, status } : v))),
-      setMemberStatus: (id, status) =>
-        setTeam((prev) => prev.map((m) => (m.id === id ? { ...m, status } : m))),
-      setStateStatus: (id, status) =>
-        setStates((prev) => prev.map((s) => (s.id === id ? { ...s, status } : s))),
-      setCityStatus: (id, status) =>
-        setCities((prev) => prev.map((c) => (c.id === id ? { ...c, status } : c))),
-      setFranchiseStatus: (id, status) =>
-        setFranchises((prev) => prev.map((f) => (f.id === id ? { ...f, status } : f))),
-      addSubscriptionPlan: (plan) => setSubscriptionPlans((prev) => [...prev, plan]),
-      activateSubscription: ({ subscriberId, subscriberType, subscriberName, email, plan, billing, expiresOn, notes }) => {
+      addVehicle: (vehicle) => {
+        if (hasApiBackend()) {
+          void adminApi.createFleetVehicle(vehicle).then((created) => {
+            setFleet((prev) => [created, ...prev])
+          })
+          return
+        }
+        setFleet((prev) => [vehicle, ...prev])
+      },
+      addMember: (member) => {
+        if (hasApiBackend()) {
+          void adminApi.createTeamMember(member).then((created) => {
+            setTeam((prev) => [created, ...prev])
+          })
+          return
+        }
+        setTeam((prev) => [member, ...prev])
+      },
+      addState: (state) => {
+        if (hasApiBackend()) {
+          void adminApi.createState(state).then((created) => {
+            setStates((prev) => [created, ...prev])
+          })
+          return
+        }
+        setStates((prev) => [state, ...prev])
+      },
+      addCity: (city) => {
+        if (hasApiBackend()) {
+          void adminApi.createCity(city).then((created) => {
+            setCities((prev) => [created, ...prev])
+          })
+          return
+        }
+        setCities((prev) => [city, ...prev])
+      },
+      addFranchise: (franchise) => {
+        setFranchises((prev) => [franchise, ...prev])
+      },
+      addProfessional: (professional) => {
+        setProfessionals((prev) => [professional, ...prev])
+      },
+      removeProfessional: (id) => {
+        if (hasApiBackend()) {
+          void adminApi.deleteProfessional(id).then(() => {
+            setProfessionals((prev) => prev.filter((p) => p.id !== id))
+            void refresh()
+          })
+          return
+        }
+        setProfessionals((prev) => prev.filter((p) => p.id !== id))
+      },
+      setHospitalStatus: (id, status) => {
+        setHospitals((prev) => prev.map((h) => (h.id === id ? { ...h, status } : h)))
+        if (hasApiBackend()) {
+          void adminApi.updateHospital(id, { status })
+        }
+      },
+      setVehicleStatus: (id, status) => {
+        setFleet((prev) => prev.map((v) => (v.id === id ? { ...v, status } : v)))
+        if (hasApiBackend()) {
+          void adminApi.updateFleetVehicle(id, { status })
+        }
+      },
+      setMemberStatus: (id, status) => {
+        setTeam((prev) => prev.map((m) => (m.id === id ? { ...m, status } : m)))
+        if (hasApiBackend()) {
+          void adminApi.updateTeamMember(id, { status })
+        }
+      },
+      setStateStatus: (id, status) => {
+        setStates((prev) => prev.map((s) => (s.id === id ? { ...s, status } : s)))
+      },
+      setCityStatus: (id, status) => {
+        setCities((prev) => prev.map((c) => (c.id === id ? { ...c, status } : c)))
+      },
+      setFranchiseStatus: (id, status) => {
+        setFranchises((prev) => prev.map((f) => (f.id === id ? { ...f, status } : f)))
+        if (hasApiBackend()) {
+          void adminApi.updateFranchise(id, { status })
+        }
+      },
+      addSubscriptionPlan: (plan) => {
+        if (hasApiBackend()) {
+          void adminApi.createSubscriptionPlan(plan).then((created) => {
+            setSubscriptionPlans((prev) => [...prev, created])
+          })
+          return
+        }
+        setSubscriptionPlans((prev) => [...prev, plan])
+      },
+      updateApplicationStatus: (id, status) => {
+        setApplications((prev) => prev.map((a) => (a.id === id ? { ...a, status } : a)))
+        if (hasApiBackend()) {
+          void adminApi.updateApplicationStatus(id, status)
+        }
+      },
+      activateSubscription: (input) => {
+        if (hasApiBackend()) {
+          void adminApi
+            .activateSubscription({
+              subscriberId: input.subscriberId,
+              subscriberType: input.subscriberType,
+              planName: input.plan,
+              billing: input.billing,
+            })
+            .then(() => refresh())
+          return
+        }
         const startedOn = new Date().toLocaleDateString('en-IN', {
           day: '2-digit',
           month: 'short',
@@ -124,46 +329,40 @@ export function DirectoryProvider({ children }: { children: ReactNode }) {
         })
         const status: SubscriptionStatus = 'Active'
         setUserSubscriptions((prev) => {
-          const existing = prev.find((s) => s.subscriberId === subscriberId && s.subscriberType === subscriberType)
+          const existing = prev.find(
+            (s) => s.subscriberId === input.subscriberId && s.subscriberType === input.subscriberType,
+          )
           const next: EntitySubscription = {
             id: existing?.id ?? `sub-${Date.now()}`,
-            subscriberId,
-            subscriberType,
-            subscriberName,
-            email,
-            plan,
-            billing,
+            subscriberId: input.subscriberId,
+            subscriberType: input.subscriberType,
+            subscriberName: input.subscriberName,
+            email: input.email,
+            plan: input.plan,
+            billing: input.billing,
             status,
             startedOn,
-            expiresOn,
-            activatedBy: billing === 'Manual' ? 'Admin' : existing?.activatedBy,
-            notes,
+            expiresOn: input.expiresOn,
+            activatedBy: input.billing === 'Manual' ? 'Admin' : existing?.activatedBy,
+            notes: input.notes,
           }
           return existing
-            ? prev.map((s) => (s.subscriberId === subscriberId && s.subscriberType === subscriberType ? next : s))
+            ? prev.map((s) =>
+                s.subscriberId === input.subscriberId && s.subscriberType === input.subscriberType
+                  ? next
+                  : s,
+              )
             : [next, ...prev]
         })
-        if (subscriberType === 'Employee') {
-          setProfessionals((prev) =>
-            prev.map((p) =>
-              p.id === subscriberId ? { ...p, subscriptionPlan: plan, subscriptionStatus: status } : p,
-            ),
-          )
-        } else if (subscriberType === 'Hospital') {
-          setHospitals((prev) =>
-            prev.map((h) =>
-              h.id === subscriberId ? { ...h, subscriptionPlan: plan, subscriptionStatus: status } : h,
-            ),
-          )
-        } else {
-          setFleet((prev) =>
-            prev.map((v) =>
-              v.id === subscriberId ? { ...v, subscriptionPlan: plan, subscriptionStatus: status } : v,
-            ),
-          )
-        }
       },
       cancelSubscription: (subscriberId, subscriberType) => {
+        const sub = userSubscriptions.find(
+          (s) => s.subscriberId === subscriberId && s.subscriberType === subscriberType,
+        )
+        if (hasApiBackend() && sub) {
+          void adminApi.cancelSubscription(sub.id).then(() => refresh())
+          return
+        }
         setUserSubscriptions((prev) =>
           prev.map((s) =>
             s.subscriberId === subscriberId && s.subscriberType === subscriberType
@@ -171,28 +370,26 @@ export function DirectoryProvider({ children }: { children: ReactNode }) {
               : s,
           ),
         )
-        if (subscriberType === 'Employee') {
-          setProfessionals((prev) =>
-            prev.map((p) =>
-              p.id === subscriberId ? { ...p, subscriptionStatus: 'Cancelled' as SubscriptionStatus } : p,
-            ),
-          )
-        } else if (subscriberType === 'Hospital') {
-          setHospitals((prev) =>
-            prev.map((h) =>
-              h.id === subscriberId ? { ...h, subscriptionStatus: 'Cancelled' as SubscriptionStatus } : h,
-            ),
-          )
-        } else {
-          setFleet((prev) =>
-            prev.map((v) =>
-              v.id === subscriberId ? { ...v, subscriptionStatus: 'Cancelled' as SubscriptionStatus } : v,
-            ),
-          )
-        }
       },
     }),
-    [hospitals, fleet, team, states, cities, professionals, subscriptionPlans, userSubscriptions, franchises],
+    [
+      loading,
+      error,
+      refresh,
+      jobs,
+      applications,
+      bookings,
+      notifications,
+      hospitals,
+      fleet,
+      team,
+      states,
+      cities,
+      professionals,
+      subscriptionPlans,
+      userSubscriptions,
+      franchises,
+    ],
   )
 
   return <DirectoryContext.Provider value={value}>{children}</DirectoryContext.Provider>

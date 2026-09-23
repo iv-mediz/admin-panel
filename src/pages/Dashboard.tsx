@@ -1,65 +1,76 @@
 import type { LucideIcon } from 'lucide-react'
 import { Ambulance, Briefcase, Building2, Users } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { fetchDashboardStats, type DashboardStats } from '../api/admin'
 import LocationFilters from '../components/LocationFilters'
 import StatusChip from '../components/StatusChip'
+import { hasApiBackend } from '../config/api'
 import { useDirectory } from '../data/directory'
-import { applications, bookings, jobs, weeklyStats } from '../data/mock'
 import { matchesLocation } from '../utils/locationFilter'
 
 export default function Dashboard() {
   const navigate = useNavigate()
-  const { hospitals } = useDirectory()
+  const { hospitals, jobs, applications, bookings, loading, error } = useDirectory()
   const [stateFilter, setStateFilter] = useState('All')
   const [districtFilter, setDistrictFilter] = useState('All')
+  const [stats, setStats] = useState<DashboardStats | null>(null)
+
+  useEffect(() => {
+    if (!hasApiBackend()) return
+    const state = stateFilter === 'All' ? undefined : stateFilter
+    const district = districtFilter === 'All' ? undefined : districtFilter
+    void fetchDashboardStats({ state, district }).then(setStats).catch(() => setStats(null))
+  }, [stateFilter, districtFilter])
 
   const filteredJobs = useMemo(
     () => jobs.filter((j) => matchesLocation(j, stateFilter, districtFilter)),
-    [stateFilter, districtFilter],
+    [jobs, stateFilter, districtFilter],
   )
   const filteredApplications = useMemo(
     () => applications.filter((a) => matchesLocation(a, stateFilter, districtFilter)),
-    [stateFilter, districtFilter],
+    [applications, stateFilter, districtFilter],
   )
   const filteredBookings = useMemo(
     () => bookings.filter((b) => matchesLocation(b, stateFilter, districtFilter)),
-    [stateFilter, districtFilter],
+    [bookings, stateFilter, districtFilter],
   )
   const filteredHospitals = useMemo(
     () => hospitals.filter((h) => matchesLocation(h, stateFilter, districtFilter)),
     [hospitals, stateFilter, districtFilter],
   )
 
-  const activeJobs = filteredJobs.filter((j) => j.status === 'Active').length
-  const liveBookings = filteredBookings.filter((b) => b.status === 'On the way' || b.status === 'Assigned')
-  const partnerHospitals = filteredHospitals.filter((h) => h.status === 'Partner').length
-  const pendingHospitals = filteredHospitals.filter((h) => h.status === 'Pending').length
-  const interviewsToday = filteredApplications.filter((a) => a.status === 'Interview Scheduled').length
-  const alsOnWay = liveBookings.filter((b) => b.serviceType.includes('Advanced Life Support')).length
+  const activeJobs = stats?.activeJobs ?? filteredJobs.filter((j) => j.status === 'Active').length
+  const liveBookings = stats?.liveBookings ??
+    filteredBookings.filter((b) => b.status === 'On the way' || b.status === 'Assigned')
+  const partnerHospitals =
+    stats?.partnerHospitals ?? filteredHospitals.filter((h) => h.status === 'Partner').length
+  const pendingHospitals =
+    stats?.pendingHospitals ?? filteredHospitals.filter((h) => h.status === 'Pending').length
+  const interviewsToday =
+    stats?.interviewsScheduled ??
+    filteredApplications.filter((a) => a.status === 'Interview Scheduled').length
+  const alsOnWay =
+    stats?.alsOnWay ??
+    liveBookings.filter((b) => b.serviceType.includes('Advanced Life Support')).length
 
-  const jobRatio = jobs.length ? filteredJobs.length / jobs.length : 0
-  const bookingRatio = bookings.length ? filteredBookings.length / bookings.length : 0
-  const chartStats = useMemo(
-    () =>
-      weeklyStats.map((d) => ({
-        ...d,
-        jobs: Math.max(0, Math.round(d.jobs * jobRatio)),
-        bookings: Math.max(0, Math.round(d.bookings * bookingRatio)),
-      })),
-    [jobRatio, bookingRatio],
-  )
+  const chartStats = stats?.weeklyStats ?? []
   const maxVal = Math.max(1, ...chartStats.flatMap((d) => [d.jobs, d.bookings]))
+
+  const recentJobs = stats?.recentJobs ?? filteredJobs.slice(0, 4)
+  const recentApplications = stats?.recentApplications ?? filteredApplications.slice(0, 4)
 
   const locationLabel =
     stateFilter === 'All'
-      ? 'Telangana and Karnataka'
+      ? statesLabel(hospitals, jobs)
       : districtFilter === 'All'
         ? stateFilter
         : `${districtFilter}, ${stateFilter}`
 
   return (
     <div className="page">
+      {loading ? <p className="hint">Loading live data from API…</p> : null}
+      {error ? <p className="hint" style={{ color: '#b91c1c' }}>{error}</p> : null}
       <section className="hero">
         <div>
           <h3>Good morning, Admin</h3>
@@ -128,15 +139,19 @@ export default function Dashboard() {
             </div>
           </div>
           <div className="bars">
-            {chartStats.map((d) => (
-              <div className="bar-col" key={d.label}>
-                <div className="bar-stack">
-                  <div className="bar jobs" style={{ height: `${(d.jobs / maxVal) * 100}%` }} />
-                  <div className="bar bookings" style={{ height: `${(d.bookings / maxVal) * 100}%` }} />
+            {chartStats.length === 0 ? (
+              <p className="muted">No chart data yet.</p>
+            ) : (
+              chartStats.map((d) => (
+                <div className="bar-col" key={d.label}>
+                  <div className="bar-stack">
+                    <div className="bar jobs" style={{ height: `${(d.jobs / maxVal) * 100}%` }} />
+                    <div className="bar bookings" style={{ height: `${(d.bookings / maxVal) * 100}%` }} />
+                  </div>
+                  <span>{d.label}</span>
                 </div>
-                <span>{d.label}</span>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </article>
 
@@ -147,7 +162,10 @@ export default function Dashboard() {
               See all
             </button>
           </div>
-          {liveBookings.map((b) => (
+          {liveBookings.length === 0 ? (
+            <p className="muted">No active ambulance bookings.</p>
+          ) : (
+            liveBookings.map((b) => (
               <div className="list-item" key={b.id}>
                 <div className="icon-box" style={{ background: '#fee8e8', color: '#dc2626' }}>
                   <Ambulance size={18} />
@@ -163,7 +181,8 @@ export default function Dashboard() {
                 </div>
                 <StatusChip label={b.status} />
               </div>
-            ))}
+            ))
+          )}
         </article>
       </div>
 
@@ -175,7 +194,7 @@ export default function Dashboard() {
               See all
             </button>
           </div>
-          {filteredJobs.slice(0, 4).map((job) => (
+          {recentJobs.map((job) => (
             <div className="list-item" key={job.id}>
               <div className="icon-box" style={{ background: 'var(--primary-soft)', color: 'var(--primary)' }}>
                 <Briefcase size={18} />
@@ -198,7 +217,7 @@ export default function Dashboard() {
               See all
             </button>
           </div>
-          {filteredApplications.slice(0, 4).map((app) => (
+          {recentApplications.map((app) => (
             <div className="list-item" key={app.id}>
               <div className="avatar">{app.applicant.slice(0, 1)}</div>
               <div style={{ flex: 1 }}>
@@ -214,6 +233,13 @@ export default function Dashboard() {
       </div>
     </div>
   )
+}
+
+function statesLabel(hospitals: { state: string }[], jobs: { state: string }[]) {
+  const names = [...new Set([...hospitals, ...jobs].map((x) => x.state).filter(Boolean))]
+  if (names.length === 0) return 'your regions'
+  if (names.length <= 2) return names.join(' and ')
+  return `${names.slice(0, 2).join(', ')} and more`
 }
 
 function Stat({

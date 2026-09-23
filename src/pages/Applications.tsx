@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react'
 import LocationFilters from '../components/LocationFilters'
 import Modal from '../components/Modal'
 import StatusChip from '../components/StatusChip'
-import { applications as seed } from '../data/mock'
+import { useDirectory } from '../data/directory'
 import type { Application, ApplicationStatus } from '../types'
 import { matchesLocation } from '../utils/locationFilter'
 
@@ -11,7 +11,7 @@ const TABS = ['All', 'Under Review', 'Shortlisted', 'Interview Scheduled', 'Offe
 const EMPLOYMENT = ['All', 'Full Time', 'Part Time', 'Locum'] as const
 
 export default function Applications() {
-  const [items, setItems] = useState<Application[]>(seed)
+  const { applications: items, updateApplicationStatus, loading, error } = useDirectory()
   const [tab, setTab] = useState<(typeof TABS)[number]>('All')
   const [query, setQuery] = useState('')
   const [employment, setEmployment] = useState<(typeof EMPLOYMENT)[number]>('All')
@@ -32,12 +32,14 @@ export default function Applications() {
   }, [items, tab, query, employment, stateFilter, districtFilter])
 
   function updateStatus(id: string, status: ApplicationStatus) {
-    setItems((prev) => prev.map((a) => (a.id === id ? { ...a, status } : a)))
+    updateApplicationStatus(id, status)
     setSelected((cur) => (cur && cur.id === id ? { ...cur, status } : cur))
   }
 
   return (
     <div className="page">
+      {loading ? <p className="hint">Loading applications…</p> : null}
+      {error ? <p className="hint" style={{ color: '#b91c1c' }}>{error}</p> : null}
       <div className="page-head">
         <div>
           <h3>My Applications</h3>

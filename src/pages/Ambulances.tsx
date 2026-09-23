@@ -5,7 +5,6 @@ import LocationFilters from '../components/LocationFilters'
 import Modal from '../components/Modal'
 import StatusChip from '../components/StatusChip'
 import { useDirectory } from '../data/directory'
-import { bookings, services } from '../data/mock'
 import type { AmbulanceService, AmbulanceVehicle, OnboardLocationState } from '../types'
 import { matchesLocation } from '../utils/locationFilter'
 
@@ -16,7 +15,35 @@ const ICONS: Record<AmbulanceService['id'], LucideIcon> = { bls: Ambulance, als:
 export default function Ambulances() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { fleet, setVehicleStatus } = useDirectory()
+  const { fleet, bookings, setVehicleStatus, loading, error } = useDirectory()
+
+  const services = useMemo((): AmbulanceService[] => {
+    const count = (match: (s: string) => boolean) =>
+      bookings.filter((b) => match(b.serviceType.toLowerCase())).length
+    return [
+      {
+        id: 'bls',
+        title: 'Basic Life Support',
+        subtitle: 'Oxygen, first aid & trained EMT for stable patients',
+        bookings: count((s) => s.includes('basic')),
+        fareFrom: '₹980',
+      },
+      {
+        id: 'als',
+        title: 'Advanced Life Support',
+        subtitle: 'ICU setup, defibrillator & critical care paramedic',
+        bookings: count((s) => s.includes('advanced')),
+        fareFrom: '₹2,180',
+      },
+      {
+        id: 'neo',
+        title: 'Neonatal transport',
+        subtitle: 'Incubator & NICU-trained crew for newborns',
+        bookings: count((s) => s.includes('neonatal') || s.includes('neo')),
+        fareFrom: '₹2,480',
+      },
+    ]
+  }, [bookings])
   const [view, setView] = useState<'Fleet' | 'Bookings'>('Fleet')
   const [query, setQuery] = useState('')
   const [tab, setTab] = useState<string>('All')
@@ -46,7 +73,7 @@ export default function Ambulances() {
       const matchesLoc = matchesLocation(b, stateFilter, districtFilter)
       return matchesQuery && matchesLoc && (tab === 'All' || b.status === tab)
     })
-  }, [query, tab, stateFilter, districtFilter])
+  }, [bookings, query, tab, stateFilter, districtFilter])
 
   function switchView(next: 'Fleet' | 'Bookings') {
     setView(next)
@@ -69,6 +96,8 @@ export default function Ambulances() {
         </button>
       </div>
 
+      {loading ? <p className="hint">Loading fleet & bookings…</p> : null}
+      {error ? <p className="hint" style={{ color: '#b91c1c' }}>{error}</p> : null}
       {notice && <div className="notice">{notice} was submitted and is waiting for approval.</div>}
 
       <div className="pills" style={{ marginBottom: 14 }}>

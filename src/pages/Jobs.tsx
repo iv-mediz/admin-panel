@@ -3,7 +3,9 @@ import { useMemo, useState, type FormEvent } from 'react'
 import LocationFilters from '../components/LocationFilters'
 import Modal from '../components/Modal'
 import StatusChip from '../components/StatusChip'
-import { jobs as seedJobs } from '../data/mock'
+import * as adminApi from '../api/admin'
+import { hasApiBackend } from '../config/api'
+import { useDirectory } from '../data/directory'
 import type { Job, JobCategory, JobType } from '../types'
 import { matchesLocation } from '../utils/locationFilter'
 
@@ -37,7 +39,7 @@ const emptyJob: JobForm = {
 }
 
 export default function Jobs() {
-  const [items, setItems] = useState<Job[]>(seedJobs)
+  const { jobs: items, setJobs, loading, error, refresh } = useDirectory()
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState<(typeof CATEGORIES)[number]>('All')
   const [type, setType] = useState<(typeof TYPES)[number]>('All')
@@ -62,29 +64,33 @@ export default function Jobs() {
     })
   }, [items, query, category, type, stateFilter, districtFilter])
 
-  function saveJob(e: FormEvent) {
+  async function saveJob(e: FormEvent) {
     e.preventDefault()
-    setItems((prev) => [
-      {
-        ...form,
-        id: `j${Date.now()}`,
-        state: 'Telangana',
-        district: form.location.split(',')[0] || form.location,
-        posted: 'Just now',
-        status: 'Active',
-        applicants: 0,
-        rating: 4.5,
-        responsibilities: ['To be confirmed with hiring hospital'],
-        tags: [form.category, form.type],
-      },
-      ...prev,
-    ])
+    const payload: Partial<Job> = {
+      ...form,
+      state: 'Telangana',
+      district: form.location.split(',')[0] || form.location,
+      posted: 'Just now',
+      status: 'Active',
+      applicants: 0,
+      rating: 4.5,
+      responsibilities: ['To be confirmed with hiring hospital'],
+      tags: [form.category, form.type],
+    }
+    if (hasApiBackend()) {
+      await adminApi.createJob(payload)
+      await refresh()
+    } else {
+      setJobs((prev) => [{ ...payload, id: `j${Date.now()}` } as Job, ...prev])
+    }
     setForm(emptyJob)
     setOpen(false)
   }
 
   return (
     <div className="page">
+      {loading ? <p className="hint">Loading jobs from API…</p> : null}
+      {error ? <p className="hint" style={{ color: '#b91c1c' }}>{error}</p> : null}
       <div className="page-head">
         <div>
           <h3>Find Healthcare Jobs</h3>
