@@ -32,10 +32,6 @@ export function setApiSession(accessToken: string, user: AdminUser): void {
   localStorage.setItem(LEGACY_FLAG, '1')
 }
 
-export function setMockSession(): void {
-  localStorage.setItem(LEGACY_FLAG, '1')
-}
-
 export function clearSession(): void {
   localStorage.removeItem(LEGACY_FLAG)
   localStorage.removeItem(TOKEN_KEY)

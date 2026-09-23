@@ -78,6 +78,13 @@ export default function Hospitals() {
             </tr>
           </thead>
           <tbody>
+            {filtered.length === 0 ? (
+              <tr>
+                <td colSpan={7} style={{ textAlign: 'center', padding: '32px 16px', color: '#667085' }}>
+                  No hospitals yet. Use &quot;Onboard hospital&quot; to add your first partner.
+                </td>
+              </tr>
+            ) : null}
             {filtered.map((h) => (
               <tr key={h.id}>
                 <td>

@@ -30,7 +30,7 @@ npm run dev
 
 With `VITE_API_BASE_URL` set, sign-in calls `POST /auth/admin/login` on your NestJS API. Credentials must match the server `ADMIN_EMAIL` / `ADMIN_PASSWORD` (or an admin user in the database).
 
-Without `VITE_API_BASE_URL`, the panel stays in **UI-only demo mode** (mock sign-in).
+On HTTPS (Vercel), the panel uses the `/api/v1` proxy to the backend even when `VITE_API_BASE_URL` is unset. Sign-in always requires the live API.
 
 ## CORS
 

@@ -18,7 +18,11 @@ export function getApiBaseUrl(): string {
 export const apiBaseUrl = configuredBaseUrl()
 
 export function hasApiBackend(): boolean {
-  return configuredBaseUrl().length > 0
+  if (configuredBaseUrl().length > 0) return true
+  if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
+    return true
+  }
+  return false
 }
 
 export function apiUrl(path: string): string {

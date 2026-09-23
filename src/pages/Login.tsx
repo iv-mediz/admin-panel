@@ -3,13 +3,14 @@ import { useNavigate } from 'react-router-dom'
 import { sendAdminOtp, verifyAdminOtp } from '../api/auth'
 import { ApiError } from '../api/http'
 import { getApiBaseUrl, hasApiBackend, isDevBackend } from '../config/api'
-import { setApiSession, setMockSession } from '../auth/session'
+import { setApiSession } from '../auth/session'
 
 const DEV_OTP = '123456'
+const ADMIN_EMAIL_DEFAULT = 'admin@ivmediz.com'
 
 export default function Login() {
   const navigate = useNavigate()
-  const [email, setEmail] = useState('admin@ivmediz.app')
+  const [email, setEmail] = useState(ADMIN_EMAIL_DEFAULT)
   const [otp, setOtp] = useState(['', '', '', '', '', ''])
   const [step, setStep] = useState<'email' | 'otp'>('email')
   const [devOtp, setDevOtp] = useState<string | null>(null)
@@ -18,19 +19,19 @@ export default function Login() {
   const otpRefs = useRef<Array<HTMLInputElement | null>>([])
 
   const otpValue = otp.join('')
-  const showDevOtp = (isDevBackend() || !hasApiBackend()) && !!devOtp
+  const showDevOtp = isDevBackend() && !!devOtp
 
   async function sendOtp(e: FormEvent) {
     e.preventDefault()
+    if (!hasApiBackend()) {
+      setError('API is not configured. Set VITE_API_BASE_URL or deploy with the /api/v1 proxy.')
+      return
+    }
     setLoading(true)
     setError(null)
     try {
-      if (hasApiBackend()) {
-        const result = await sendAdminOtp(email.trim())
-        setDevOtp(result.devOtp ?? (isDevBackend() ? DEV_OTP : null))
-      } else {
-        setDevOtp(DEV_OTP)
-      }
+      const result = await sendAdminOtp(email.trim())
+      setDevOtp(result.devOtp ?? (isDevBackend() ? DEV_OTP : null))
       setOtp(['', '', '', '', '', ''])
       setStep('otp')
     } catch (err) {
@@ -43,17 +44,15 @@ export default function Login() {
   async function verifyOtp(e: FormEvent) {
     e.preventDefault()
     if (otpValue.length !== 6) return
+    if (!hasApiBackend()) {
+      setError('API is not configured.')
+      return
+    }
     setLoading(true)
     setError(null)
     try {
-      if (hasApiBackend()) {
-        const result = await verifyAdminOtp(email.trim(), otpValue)
-        setApiSession(result.accessToken, result.user)
-      } else if (otpValue === DEV_OTP) {
-        setMockSession()
-      } else {
-        throw new ApiError('Invalid OTP', 401)
-      }
+      const result = await verifyAdminOtp(email.trim(), otpValue)
+      setApiSession(result.accessToken, result.user)
       navigate('/')
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'OTP verification failed.')
@@ -107,16 +106,9 @@ export default function Login() {
           <form className="login-box" onSubmit={sendOtp}>
             <h3>Welcome back</h3>
             <p>Sign in to the iv mediz admin panel with email OTP</p>
-            {hasApiBackend() ? (
-              <p className="hint" style={{ marginBottom: 12 }}>
-                API: <code>{getApiBaseUrl()}</code>
-              </p>
-            ) : (
-              <p className="hint" style={{ marginBottom: 12 }}>
-                Set <code>VITE_API_BASE_URL</code> in Vercel (or <code>.env.local</code>) to
-                connect the backend.
-              </p>
-            )}
+            <p className="hint" style={{ marginBottom: 12 }}>
+              API: <code>{getApiBaseUrl()}</code>
+            </p>
             <div className="field">
               <label>Email</label>
               <input
