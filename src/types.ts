@@ -18,6 +18,7 @@ export interface Job {
   id: string
   title: string
   hospital: string
+  hospitalId?: string
   location: string
   state: string
   district: string

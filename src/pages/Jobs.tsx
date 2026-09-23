@@ -6,7 +6,7 @@ import StatusChip from '../components/StatusChip'
 import * as adminApi from '../api/admin'
 import { hasApiBackend } from '../config/api'
 import { useDirectory } from '../data/directory'
-import type { Job, JobCategory, JobType } from '../types'
+import type { Hospital, Job, JobCategory, JobType } from '../types'
 import { matchesLocation } from '../utils/locationFilter'
 
 const CATEGORIES = ['All', 'Nursing', 'Doctors', 'Allied Health', 'Pharmacy'] as const
@@ -14,7 +14,7 @@ const TYPES = ['All', 'Locum', 'Part Time', 'Full Time'] as const
 
 interface JobForm {
   title: string
-  hospital: string
+  hospitalId: string
   location: string
   salary: string
   experience: string
@@ -27,7 +27,7 @@ interface JobForm {
 
 const emptyJob: JobForm = {
   title: '',
-  hospital: '',
+  hospitalId: '',
   location: '',
   salary: '',
   experience: '',
@@ -39,7 +39,11 @@ const emptyJob: JobForm = {
 }
 
 export default function Jobs() {
-  const { jobs: items, setJobs, loading, error, refresh } = useDirectory()
+  const { jobs: items, hospitals, setJobs, loading, error, refresh } = useDirectory()
+  const partnerHospitals = useMemo(
+    () => hospitals.filter((h) => h.status === 'Partner'),
+    [hospitals],
+  )
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState<(typeof CATEGORIES)[number]>('All')
   const [type, setType] = useState<(typeof TYPES)[number]>('All')
@@ -48,6 +52,12 @@ export default function Jobs() {
   const [open, setOpen] = useState(false)
   const [selected, setSelected] = useState<Job | null>(null)
   const [form, setForm] = useState<JobForm>(emptyJob)
+  const [saving, setSaving] = useState(false)
+
+  const selectedHospital = useMemo(
+    () => partnerHospitals.find((h) => h.id === form.hospitalId),
+    [partnerHospitals, form.hospitalId],
+  )
 
   const filtered = useMemo(() => {
     return items.filter((job) => {
@@ -64,12 +74,34 @@ export default function Jobs() {
     })
   }, [items, query, category, type, stateFilter, districtFilter])
 
+  function applyHospital(hospital: Hospital) {
+    setForm((prev) => ({
+      ...prev,
+      hospitalId: hospital.id,
+      location: `${hospital.city}, ${hospital.state}`,
+    }))
+  }
+
   async function saveJob(e: FormEvent) {
     e.preventDefault()
+    if (!form.hospitalId) return
+    const hospital = partnerHospitals.find((h) => h.id === form.hospitalId)
+    if (!hospital) return
+
     const payload: Partial<Job> = {
-      ...form,
-      state: 'Telangana',
-      district: form.location.split(',')[0] || form.location,
+      title: form.title,
+      hospitalId: form.hospitalId,
+      hospital: hospital.name,
+      location: form.location || `${hospital.city}, ${hospital.state}`,
+      state: hospital.state,
+      district: hospital.district,
+      salary: form.salary,
+      experience: form.experience,
+      type: form.type,
+      category: form.category,
+      department: form.department,
+      availability: form.availability,
+      description: form.description,
       posted: 'Just now',
       status: 'Active',
       applicants: 0,
@@ -77,14 +109,19 @@ export default function Jobs() {
       responsibilities: ['To be confirmed with hiring hospital'],
       tags: [form.category, form.type],
     }
-    if (hasApiBackend()) {
-      await adminApi.createJob(payload)
-      await refresh()
-    } else {
-      setJobs((prev) => [{ ...payload, id: `j${Date.now()}` } as Job, ...prev])
+    setSaving(true)
+    try {
+      if (hasApiBackend()) {
+        await adminApi.createJob(payload)
+        await refresh()
+      } else {
+        setJobs((prev) => [{ ...payload, id: `j${Date.now()}` } as Job, ...prev])
+      }
+      setForm(emptyJob)
+      setOpen(false)
+    } finally {
+      setSaving(false)
     }
-    setForm(emptyJob)
-    setOpen(false)
   }
 
   return (
@@ -182,10 +219,37 @@ export default function Jobs() {
       {open && (
         <Modal title="Post a healthcare job" onClose={() => setOpen(false)}>
           <form onSubmit={saveJob}>
+            {partnerHospitals.length === 0 ? (
+              <p className="hint" style={{ marginBottom: 16 }}>
+                Onboard and approve at least one <strong>Partner</strong> hospital before posting jobs.
+              </p>
+            ) : null}
             <div className="form-grid">
               <Field label="Job title" value={form.title} onChange={(v) => setForm({ ...form, title: v })} />
-              <Field label="Hospital" value={form.hospital} onChange={(v) => setForm({ ...form, hospital: v })} />
-              <Field label="Location" value={form.location} onChange={(v) => setForm({ ...form, location: v })} />
+              <div className="field">
+                <label>Hospital (partner)</label>
+                <select
+                  required
+                  value={form.hospitalId}
+                  onChange={(e) => {
+                    const h = partnerHospitals.find((x) => x.id === e.target.value)
+                    if (h) applyHospital(h)
+                  }}
+                >
+                  <option value="">Select hospital…</option>
+                  {partnerHospitals.map((h) => (
+                    <option key={h.id} value={h.id}>
+                      {h.name} — {h.city}, {h.state}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <Field
+                label="Location"
+                value={form.location}
+                onChange={(v) => setForm({ ...form, location: v })}
+                hint={selectedHospital ? `From ${selectedHospital.name}` : undefined}
+              />
               <Field label="Salary" value={form.salary} onChange={(v) => setForm({ ...form, salary: v })} />
               <Field label="Experience" value={form.experience} onChange={(v) => setForm({ ...form, experience: v })} />
               <Field label="Department" value={form.department} onChange={(v) => setForm({ ...form, department: v })} />
@@ -208,14 +272,19 @@ export default function Jobs() {
               </div>
               <div className="field full">
                 <label>Description</label>
-                <textarea rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+                <textarea rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} required />
               </div>
             </div>
             <div className="modal-actions">
               <button type="button" className="btn btn-outline" onClick={() => setOpen(false)}>
                 Cancel
               </button>
-              <button className="btn btn-primary">Publish job</button>
+              <button
+                className="btn btn-primary"
+                disabled={saving || partnerHospitals.length === 0 || !form.hospitalId}
+              >
+                {saving ? 'Publishing…' : 'Publish job'}
+              </button>
             </div>
           </form>
         </Modal>
@@ -253,11 +322,22 @@ export default function Jobs() {
   )
 }
 
-function Field({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
+function Field({
+  label,
+  value,
+  onChange,
+  hint,
+}: {
+  label: string
+  value: string
+  onChange: (value: string) => void
+  hint?: string
+}) {
   return (
     <div className="field">
       <label>{label}</label>
       <input value={value} onChange={(e) => onChange(e.target.value)} required />
+      {hint ? <span className="hint">{hint}</span> : null}
     </div>
   )
 }
