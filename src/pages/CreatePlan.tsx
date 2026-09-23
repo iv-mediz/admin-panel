@@ -2,11 +2,14 @@ import { Plus, Trash2 } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useDirectory } from '../data/directory'
+import type { SubscriptionAudience } from '../types'
 
 const STEPS = ['Plan details', 'Features', 'Review'] as const
+const AUDIENCES: SubscriptionAudience[] = ['Employee', 'Hospital', 'Ambulance owner']
 
 interface PlanForm {
   name: string
+  audience: SubscriptionAudience
   monthlyPrice: string
   yearlyPrice: string
   popular: boolean
@@ -16,6 +19,7 @@ interface PlanForm {
 
 const empty: PlanForm = {
   name: '',
+  audience: 'Employee',
   monthlyPrice: '',
   yearlyPrice: '',
   popular: false,
@@ -44,7 +48,9 @@ export default function CreatePlan() {
   }
 
   function nameTaken(name: string): boolean {
-    return subscriptionPlans.some((p) => p.name.toLowerCase() === name.trim().toLowerCase())
+    return subscriptionPlans.some(
+      (p) => p.audience === form.audience && p.name.toLowerCase() === name.trim().toLowerCase(),
+    )
   }
 
   function canContinue(): boolean {
@@ -65,6 +71,7 @@ export default function CreatePlan() {
     addSubscriptionPlan({
       id: `plan-${Date.now()}`,
       name: form.name.trim(),
+      audience: form.audience,
       monthlyPrice: form.monthlyPrice.trim(),
       yearlyPrice: form.yearlyPrice.trim(),
       features: form.features,
@@ -79,7 +86,7 @@ export default function CreatePlan() {
       <div className="page-head">
         <div>
           <h3>Create subscription plan</h3>
-          <p>Define pricing and features — the plan goes live in the mobile app once published.</p>
+          <p>Define pricing and features for employees, hospitals, or ambulance owners.</p>
         </div>
         <button className="btn btn-outline" onClick={() => navigate('/subscriptions')}>
           Back to subscriptions
@@ -103,14 +110,30 @@ export default function CreatePlan() {
       <form className="card card-pad" onSubmit={next}>
         {step === 0 && (
           <div className="form-grid">
+            <div className="field full">
+              <label>Plan for</label>
+              <select value={form.audience} onChange={(e) => setField('audience', e.target.value as SubscriptionAudience)}>
+                {AUDIENCES.map((a) => (
+                  <option key={a} value={a}>
+                    {a === 'Employee' ? 'Employees (healthcare professionals)' : a === 'Hospital' ? 'Hospitals (hiring partners)' : 'Ambulance owners (fleet operators)'}
+                  </option>
+                ))}
+              </select>
+            </div>
             <Field
               label="Plan name"
               value={form.name}
               onChange={(v) => setField('name', v)}
-              placeholder="e.g. Starter, Enterprise"
+              placeholder={
+                form.audience === 'Employee'
+                  ? 'e.g. Professional, Premium'
+                  : form.audience === 'Hospital'
+                    ? 'e.g. Hospital Starter, Growth'
+                    : 'e.g. Fleet Starter, Fleet Pro'
+              }
             />
             {form.name.trim() && nameTaken(form.name) && (
-              <p className="field-hint error full">A plan with this name already exists.</p>
+              <p className="field-hint error full">A plan with this name already exists for {form.audience.toLowerCase()}s.</p>
             )}
             <Field
               label="Monthly price"
@@ -140,11 +163,17 @@ export default function CreatePlan() {
         {step === 1 && (
           <>
             <p className="muted" style={{ marginBottom: 14 }}>
-              List what subscribers get with this plan. Add at least one feature.
+              List what {form.audience.toLowerCase()}s get with this plan. Add at least one feature.
             </p>
             <div className="feature-add-row">
               <input
-                placeholder="e.g. Unlimited job applications"
+                placeholder={
+                  form.audience === 'Employee'
+                    ? 'e.g. Unlimited job applications'
+                    : form.audience === 'Hospital'
+                      ? 'e.g. Unlimited job posts'
+                      : 'e.g. Priority dispatch routing'
+                }
                 value={form.featureDraft}
                 onChange={(e) => setField('featureDraft', e.target.value)}
                 onKeyDown={(e) => {
@@ -181,9 +210,10 @@ export default function CreatePlan() {
         {step === 2 && (
           <>
             <p className="muted" style={{ marginBottom: 14 }}>
-              Confirm details. The plan will be <strong>Active</strong> and visible to mobile users immediately.
+              Confirm details. The plan will be <strong>Active</strong> and visible to {form.audience.toLowerCase()}s in the mobile app immediately.
             </p>
             <div className="detail-grid">
+              <Meta label="Audience" value={form.audience} />
               <Meta label="Plan name" value={form.name} />
               <Meta label="Monthly" value={form.monthlyPrice} />
               <Meta label="Yearly" value={form.yearlyPrice} />

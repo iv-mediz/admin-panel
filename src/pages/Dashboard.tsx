@@ -1,22 +1,71 @@
 import type { LucideIcon } from 'lucide-react'
 import { Ambulance, Briefcase, Building2, Users } from 'lucide-react'
+import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import LocationFilters from '../components/LocationFilters'
 import StatusChip from '../components/StatusChip'
+import { useDirectory } from '../data/directory'
 import { applications, bookings, jobs, weeklyStats } from '../data/mock'
-
-const maxVal = Math.max(...weeklyStats.flatMap((d) => [d.jobs, d.bookings]))
+import { matchesLocation } from '../utils/locationFilter'
 
 export default function Dashboard() {
   const navigate = useNavigate()
-  const activeJobs = jobs.filter((j) => j.status === 'Active').length
-  const liveBookings = bookings.filter((b) => b.status === 'On the way' || b.status === 'Assigned').length
+  const { hospitals } = useDirectory()
+  const [stateFilter, setStateFilter] = useState('All')
+  const [districtFilter, setDistrictFilter] = useState('All')
+
+  const filteredJobs = useMemo(
+    () => jobs.filter((j) => matchesLocation(j, stateFilter, districtFilter)),
+    [stateFilter, districtFilter],
+  )
+  const filteredApplications = useMemo(
+    () => applications.filter((a) => matchesLocation(a, stateFilter, districtFilter)),
+    [stateFilter, districtFilter],
+  )
+  const filteredBookings = useMemo(
+    () => bookings.filter((b) => matchesLocation(b, stateFilter, districtFilter)),
+    [stateFilter, districtFilter],
+  )
+  const filteredHospitals = useMemo(
+    () => hospitals.filter((h) => matchesLocation(h, stateFilter, districtFilter)),
+    [hospitals, stateFilter, districtFilter],
+  )
+
+  const activeJobs = filteredJobs.filter((j) => j.status === 'Active').length
+  const liveBookings = filteredBookings.filter((b) => b.status === 'On the way' || b.status === 'Assigned')
+  const partnerHospitals = filteredHospitals.filter((h) => h.status === 'Partner').length
+  const pendingHospitals = filteredHospitals.filter((h) => h.status === 'Pending').length
+  const interviewsToday = filteredApplications.filter((a) => a.status === 'Interview Scheduled').length
+  const alsOnWay = liveBookings.filter((b) => b.serviceType.includes('Advanced Life Support')).length
+
+  const jobRatio = jobs.length ? filteredJobs.length / jobs.length : 0
+  const bookingRatio = bookings.length ? filteredBookings.length / bookings.length : 0
+  const chartStats = useMemo(
+    () =>
+      weeklyStats.map((d) => ({
+        ...d,
+        jobs: Math.max(0, Math.round(d.jobs * jobRatio)),
+        bookings: Math.max(0, Math.round(d.bookings * bookingRatio)),
+      })),
+    [jobRatio, bookingRatio],
+  )
+  const maxVal = Math.max(1, ...chartStats.flatMap((d) => [d.jobs, d.bookings]))
+
+  const locationLabel =
+    stateFilter === 'All'
+      ? 'Telangana and Karnataka'
+      : districtFilter === 'All'
+        ? stateFilter
+        : `${districtFilter}, ${stateFilter}`
 
   return (
     <div className="page">
       <section className="hero">
         <div>
           <h3>Good morning, Admin</h3>
-          <p>iv mediz is live across Telangana and Karnataka — jobs, ambulances and partner hospitals in one view.</p>
+          <p>
+            iv mediz is live across {locationLabel} — jobs, ambulances and partner hospitals in one view.
+          </p>
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <button className="btn" style={{ background: '#fff', color: '#116a9b' }} onClick={() => navigate('/hospitals/onboard')}>
@@ -28,11 +77,41 @@ export default function Dashboard() {
         </div>
       </section>
 
+      <div className="toolbar" style={{ marginBottom: 18 }}>
+        <LocationFilters
+          state={stateFilter}
+          district={districtFilter}
+          onStateChange={setStateFilter}
+          onDistrictChange={setDistrictFilter}
+        />
+      </div>
+
       <section className="stats">
-        <Stat icon={Briefcase} color="#e7f7f8" accent="#0097a7" label="Active jobs" value={activeJobs} meta="+4 this week" />
-        <Stat icon={Users} color="#e8f0fe" accent="#2563eb" label="Applications" value={applications.length} meta="2 interviews today" />
-        <Stat icon={Ambulance} color="#fee8e8" accent="#dc2626" label="Live ambulances" value={liveBookings} meta="1 ALS on the way" />
-        <Stat icon={Building2} color="#e8f8ee" accent="#16a34a" label="Partner hospitals" value="6" meta="1 pending request" />
+        <Stat icon={Briefcase} color="#e7f7f8" accent="#0097a7" label="Active jobs" value={activeJobs} meta={`${filteredJobs.length} in region`} />
+        <Stat
+          icon={Users}
+          color="#e8f0fe"
+          accent="#2563eb"
+          label="Applications"
+          value={filteredApplications.length}
+          meta={interviewsToday ? `${interviewsToday} interviews scheduled` : 'No interviews scheduled'}
+        />
+        <Stat
+          icon={Ambulance}
+          color="#fee8e8"
+          accent="#dc2626"
+          label="Live ambulances"
+          value={liveBookings.length}
+          meta={alsOnWay ? `${alsOnWay} ALS on the way` : 'No ALS active'}
+        />
+        <Stat
+          icon={Building2}
+          color="#e8f8ee"
+          accent="#16a34a"
+          label="Partner hospitals"
+          value={partnerHospitals}
+          meta={pendingHospitals ? `${pendingHospitals} pending request${pendingHospitals > 1 ? 's' : ''}` : 'All approved'}
+        />
       </section>
 
       <div className="grid-2">
@@ -49,7 +128,7 @@ export default function Dashboard() {
             </div>
           </div>
           <div className="bars">
-            {weeklyStats.map((d) => (
+            {chartStats.map((d) => (
               <div className="bar-col" key={d.label}>
                 <div className="bar-stack">
                   <div className="bar jobs" style={{ height: `${(d.jobs / maxVal) * 100}%` }} />
@@ -68,9 +147,7 @@ export default function Dashboard() {
               See all
             </button>
           </div>
-          {bookings
-            .filter((b) => b.status === 'On the way' || b.status === 'Assigned')
-            .map((b) => (
+          {liveBookings.map((b) => (
               <div className="list-item" key={b.id}>
                 <div className="icon-box" style={{ background: '#fee8e8', color: '#dc2626' }}>
                   <Ambulance size={18} />
@@ -98,7 +175,7 @@ export default function Dashboard() {
               See all
             </button>
           </div>
-          {jobs.slice(0, 4).map((job) => (
+          {filteredJobs.slice(0, 4).map((job) => (
             <div className="list-item" key={job.id}>
               <div className="icon-box" style={{ background: 'var(--primary-soft)', color: 'var(--primary)' }}>
                 <Briefcase size={18} />
@@ -121,7 +198,7 @@ export default function Dashboard() {
               See all
             </button>
           </div>
-          {applications.slice(0, 4).map((app) => (
+          {filteredApplications.slice(0, 4).map((app) => (
             <div className="list-item" key={app.id}>
               <div className="avatar">{app.applicant.slice(0, 1)}</div>
               <div style={{ flex: 1 }}>

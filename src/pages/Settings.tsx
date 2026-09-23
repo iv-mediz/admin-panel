@@ -1,7 +1,43 @@
+import { apiBaseUrl, hasApiBackend, isDevBackend } from '../config/api'
+import { getAdminUser } from '../auth/session'
+
 export default function Settings() {
+  const user = getAdminUser()
+
   return (
     <div className="page">
       <div className="grid-2">
+        <article className="card card-pad">
+          <h4 style={{ marginBottom: 14 }}>API (Vercel env)</h4>
+          <p className="muted" style={{ marginBottom: 12 }}>
+            Set <code>VITE_API_BASE_URL</code> in Vercel → Environment Variables, then redeploy.
+          </p>
+          <div className="field" style={{ marginBottom: 12 }}>
+            <label>Backend URL</label>
+            <input
+              readOnly
+              value={hasApiBackend ? apiBaseUrl : '(not set — demo mode)'}
+            />
+          </div>
+          <div className="field">
+            <label>Environment</label>
+            <input
+              readOnly
+              value={
+                !hasApiBackend
+                  ? 'UI only'
+                  : isDevBackend()
+                    ? 'Dev / staging API'
+                    : 'Production API'
+              }
+            />
+          </div>
+          {user ? (
+            <p className="muted" style={{ marginTop: 12 }}>
+              Signed in as {user.email}
+            </p>
+          ) : null}
+        </article>
         <article className="card card-pad">
           <h4 style={{ marginBottom: 14 }}>Brand</h4>
           <div className="field" style={{ marginBottom: 12 }}>

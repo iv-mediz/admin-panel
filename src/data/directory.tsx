@@ -20,12 +20,13 @@ import type {
   HospitalStatus,
   LocationStatus,
   Professional,
+  EntitySubscription,
+  SubscriptionAudience,
   SubscriptionBilling,
   SubscriptionPlan,
   SubscriptionStatus,
   TeamMember,
   TeamStatus,
-  UserSubscription,
   VehicleStatus,
 } from '../types'
 
@@ -37,7 +38,7 @@ interface DirectoryContextValue {
   cities: City[]
   professionals: Professional[]
   subscriptionPlans: SubscriptionPlan[]
-  userSubscriptions: UserSubscription[]
+  userSubscriptions: EntitySubscription[]
   franchises: Franchise[]
   addHospital: (hospital: Hospital) => void
   addVehicle: (vehicle: AmbulanceVehicle) => void
@@ -55,15 +56,16 @@ interface DirectoryContextValue {
   setFranchiseStatus: (id: string, status: FranchiseStatus) => void
   addSubscriptionPlan: (plan: SubscriptionPlan) => void
   activateSubscription: (input: {
-    userId: string
-    userName: string
+    subscriberId: string
+    subscriberType: SubscriptionAudience
+    subscriberName: string
     email: string
     plan: string
     billing: SubscriptionBilling
     expiresOn: string | null
     notes?: string
   }) => void
-  cancelSubscription: (userId: string) => void
+  cancelSubscription: (subscriberId: string, subscriberType: SubscriptionAudience) => void
 }
 
 const DirectoryContext = createContext<DirectoryContextValue | null>(null)
@@ -76,7 +78,7 @@ export function DirectoryProvider({ children }: { children: ReactNode }) {
   const [cities, setCities] = useState<City[]>(seedCities)
   const [professionals, setProfessionals] = useState<Professional[]>(seedProfessionals)
   const [subscriptionPlans, setSubscriptionPlans] = useState<SubscriptionPlan[]>(seedPlans)
-  const [userSubscriptions, setUserSubscriptions] = useState<UserSubscription[]>(seedSubscriptions)
+  const [userSubscriptions, setUserSubscriptions] = useState<EntitySubscription[]>(seedSubscriptions)
   const [franchises, setFranchises] = useState<Franchise[]>(seedFranchises)
 
   const value = useMemo<DirectoryContextValue>(
@@ -99,7 +101,7 @@ export function DirectoryProvider({ children }: { children: ReactNode }) {
       addProfessional: (professional) => setProfessionals((prev) => [professional, ...prev]),
       removeProfessional: (id) => {
         setProfessionals((prev) => prev.filter((p) => p.id !== id))
-        setUserSubscriptions((prev) => prev.filter((s) => s.userId !== id))
+        setUserSubscriptions((prev) => prev.filter((s) => !(s.subscriberId === id && s.subscriberType === 'Employee')))
       },
       setHospitalStatus: (id, status) =>
         setHospitals((prev) => prev.map((h) => (h.id === id ? { ...h, status } : h))),
@@ -114,7 +116,7 @@ export function DirectoryProvider({ children }: { children: ReactNode }) {
       setFranchiseStatus: (id, status) =>
         setFranchises((prev) => prev.map((f) => (f.id === id ? { ...f, status } : f))),
       addSubscriptionPlan: (plan) => setSubscriptionPlans((prev) => [...prev, plan]),
-      activateSubscription: ({ userId, userName, email, plan, billing, expiresOn, notes }) => {
+      activateSubscription: ({ subscriberId, subscriberType, subscriberName, email, plan, billing, expiresOn, notes }) => {
         const startedOn = new Date().toLocaleDateString('en-IN', {
           day: '2-digit',
           month: 'short',
@@ -122,11 +124,12 @@ export function DirectoryProvider({ children }: { children: ReactNode }) {
         })
         const status: SubscriptionStatus = 'Active'
         setUserSubscriptions((prev) => {
-          const existing = prev.find((s) => s.userId === userId)
-          const next: UserSubscription = {
+          const existing = prev.find((s) => s.subscriberId === subscriberId && s.subscriberType === subscriberType)
+          const next: EntitySubscription = {
             id: existing?.id ?? `sub-${Date.now()}`,
-            userId,
-            userName,
+            subscriberId,
+            subscriberType,
+            subscriberName,
             email,
             plan,
             billing,
@@ -136,23 +139,57 @@ export function DirectoryProvider({ children }: { children: ReactNode }) {
             activatedBy: billing === 'Manual' ? 'Admin' : existing?.activatedBy,
             notes,
           }
-          return existing ? prev.map((s) => (s.userId === userId ? next : s)) : [next, ...prev]
+          return existing
+            ? prev.map((s) => (s.subscriberId === subscriberId && s.subscriberType === subscriberType ? next : s))
+            : [next, ...prev]
         })
-        setProfessionals((prev) =>
-          prev.map((p) =>
-            p.id === userId ? { ...p, subscriptionPlan: plan, subscriptionStatus: status } : p,
-          ),
-        )
+        if (subscriberType === 'Employee') {
+          setProfessionals((prev) =>
+            prev.map((p) =>
+              p.id === subscriberId ? { ...p, subscriptionPlan: plan, subscriptionStatus: status } : p,
+            ),
+          )
+        } else if (subscriberType === 'Hospital') {
+          setHospitals((prev) =>
+            prev.map((h) =>
+              h.id === subscriberId ? { ...h, subscriptionPlan: plan, subscriptionStatus: status } : h,
+            ),
+          )
+        } else {
+          setFleet((prev) =>
+            prev.map((v) =>
+              v.id === subscriberId ? { ...v, subscriptionPlan: plan, subscriptionStatus: status } : v,
+            ),
+          )
+        }
       },
-      cancelSubscription: (userId) => {
+      cancelSubscription: (subscriberId, subscriberType) => {
         setUserSubscriptions((prev) =>
-          prev.map((s) => (s.userId === userId ? { ...s, status: 'Cancelled' as SubscriptionStatus } : s)),
-        )
-        setProfessionals((prev) =>
-          prev.map((p) =>
-            p.id === userId ? { ...p, subscriptionStatus: 'Cancelled' as SubscriptionStatus } : p,
+          prev.map((s) =>
+            s.subscriberId === subscriberId && s.subscriberType === subscriberType
+              ? { ...s, status: 'Cancelled' as SubscriptionStatus }
+              : s,
           ),
         )
+        if (subscriberType === 'Employee') {
+          setProfessionals((prev) =>
+            prev.map((p) =>
+              p.id === subscriberId ? { ...p, subscriptionStatus: 'Cancelled' as SubscriptionStatus } : p,
+            ),
+          )
+        } else if (subscriberType === 'Hospital') {
+          setHospitals((prev) =>
+            prev.map((h) =>
+              h.id === subscriberId ? { ...h, subscriptionStatus: 'Cancelled' as SubscriptionStatus } : h,
+            ),
+          )
+        } else {
+          setFleet((prev) =>
+            prev.map((v) =>
+              v.id === subscriberId ? { ...v, subscriptionStatus: 'Cancelled' as SubscriptionStatus } : v,
+            ),
+          )
+        }
       },
     }),
     [hospitals, fleet, team, states, cities, professionals, subscriptionPlans, userSubscriptions, franchises],

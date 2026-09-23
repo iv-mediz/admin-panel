@@ -12,7 +12,7 @@ import type {
   Professional,
   SubscriptionPlan,
   TeamMember,
-  UserSubscription,
+  EntitySubscription,
   WeeklyStat,
 } from '../types'
 
@@ -461,6 +461,7 @@ export const subscriptionPlans: SubscriptionPlan[] = [
   {
     id: 'plan-basic',
     name: 'Basic',
+    audience: 'Employee',
     monthlyPrice: 'Free',
     yearlyPrice: 'Free',
     features: ['Browse healthcare jobs', 'Apply to 5 jobs/month', 'Basic profile visibility', 'Email support'],
@@ -469,6 +470,7 @@ export const subscriptionPlans: SubscriptionPlan[] = [
   {
     id: 'plan-pro',
     name: 'Professional',
+    audience: 'Employee',
     monthlyPrice: '₹499',
     yearlyPrice: '₹4,999',
     popular: true,
@@ -484,6 +486,7 @@ export const subscriptionPlans: SubscriptionPlan[] = [
   {
     id: 'plan-premium',
     name: 'Premium',
+    audience: 'Employee',
     monthlyPrice: '₹999',
     yearlyPrice: '₹9,999',
     features: [
@@ -496,13 +499,64 @@ export const subscriptionPlans: SubscriptionPlan[] = [
     ],
     active: true,
   },
+  {
+    id: 'plan-hospital-starter',
+    name: 'Hospital Starter',
+    audience: 'Hospital',
+    monthlyPrice: '₹2,999',
+    yearlyPrice: '₹29,999',
+    features: ['Post up to 10 jobs/month', 'Applicant inbox', 'Basic analytics', 'Email support'],
+    active: true,
+  },
+  {
+    id: 'plan-hospital-growth',
+    name: 'Hospital Growth',
+    audience: 'Hospital',
+    monthlyPrice: '₹7,999',
+    yearlyPrice: '₹79,999',
+    popular: true,
+    features: [
+      'Unlimited job posts',
+      'Shortlist & interview tools',
+      'Priority candidate matching',
+      'Multi-department hiring',
+      'Dedicated account manager',
+    ],
+    active: true,
+  },
+  {
+    id: 'plan-fleet-starter',
+    name: 'Fleet Starter',
+    audience: 'Ambulance owner',
+    monthlyPrice: '₹1,499',
+    yearlyPrice: '₹14,999',
+    features: ['Up to 2 active vehicles', 'Dispatch inbox', 'Trip history', 'Basic earnings report'],
+    active: true,
+  },
+  {
+    id: 'plan-fleet-pro',
+    name: 'Fleet Pro',
+    audience: 'Ambulance owner',
+    monthlyPrice: '₹4,999',
+    yearlyPrice: '₹49,999',
+    popular: true,
+    features: [
+      'Unlimited vehicles',
+      'Priority dispatch routing',
+      'Live fleet map',
+      'Driver performance analytics',
+      '24/7 ops support',
+    ],
+    active: true,
+  },
 ]
 
-export const userSubscriptions: UserSubscription[] = [
+export const userSubscriptions: EntitySubscription[] = [
   {
     id: 'sub1',
-    userId: 'u1',
-    userName: 'Dr. Vineeth',
+    subscriberId: 'u1',
+    subscriberType: 'Employee',
+    subscriberName: 'Dr. Vineeth',
     email: 'dr.vineeth@email.com',
     plan: 'Professional',
     billing: 'Monthly',
@@ -512,8 +566,9 @@ export const userSubscriptions: UserSubscription[] = [
   },
   {
     id: 'sub2',
-    userId: 'u2',
-    userName: 'Ananya Sharma',
+    subscriberId: 'u2',
+    subscriberType: 'Employee',
+    subscriberName: 'Ananya Sharma',
     email: 'ananya.sharma@email.com',
     plan: 'Premium',
     billing: 'Yearly',
@@ -523,8 +578,9 @@ export const userSubscriptions: UserSubscription[] = [
   },
   {
     id: 'sub3',
-    userId: 'u5',
-    userName: 'Sneha Reddy',
+    subscriberId: 'u5',
+    subscriberType: 'Employee',
+    subscriberName: 'Sneha Reddy',
     email: 'sneha.reddy@email.com',
     plan: 'Professional',
     billing: 'Manual',
@@ -532,6 +588,30 @@ export const userSubscriptions: UserSubscription[] = [
     startedOn: '10 Jan 2026',
     expiresOn: '10 Jul 2026',
     activatedBy: 'Admin',
+  },
+  {
+    id: 'sub4',
+    subscriberId: 'h1',
+    subscriberType: 'Hospital',
+    subscriberName: 'Apollo Hospitals',
+    email: 'careers.blr@apollohospitals.com',
+    plan: 'Hospital Growth',
+    billing: 'Yearly',
+    status: 'Active',
+    startedOn: '01 Jul 2026',
+    expiresOn: '01 Jul 2027',
+  },
+  {
+    id: 'sub5',
+    subscriberId: 'v1',
+    subscriberType: 'Ambulance owner',
+    subscriberName: 'Mediz Care Ambulance',
+    email: 'fleet@medizcare.in',
+    plan: 'Fleet Pro',
+    billing: 'Monthly',
+    status: 'Active',
+    startedOn: '20 Aug 2026',
+    expiresOn: '20 Sep 2026',
   },
 ]
 
@@ -581,6 +661,9 @@ export const fleet: AmbulanceVehicle[] = [
   {
     id: 'v1',
     operator: 'Mediz Care Ambulance',
+    email: 'fleet@medizcare.in',
+    subscriptionPlan: 'Fleet Pro',
+    subscriptionStatus: 'Active',
     vehicle: 'KA 01 AB 2148',
     serviceType: 'Advanced Life Support',
     driver: 'Suresh Kumar',
@@ -665,6 +748,8 @@ export const hospitals: Hospital[] = [
     contact: '080 2630 4050',
     contactPerson: 'HR Desk',
     email: 'careers.blr@apollohospitals.com',
+    subscriptionPlan: 'Hospital Growth',
+    subscriptionStatus: 'Active',
     status: 'Partner',
   },
   {

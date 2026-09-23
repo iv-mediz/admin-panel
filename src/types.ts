@@ -89,6 +89,8 @@ export interface Hospital {
   contactPerson?: string
   email?: string
   departments?: string[]
+  subscriptionPlan?: SubscriptionPlanName
+  subscriptionStatus?: SubscriptionStatus
 }
 
 export interface AmbulanceVehicle {
@@ -104,6 +106,9 @@ export interface AmbulanceVehicle {
   base: string
   status: VehicleStatus
   vehiclePhotos?: VehiclePhoto[]
+  email?: string
+  subscriptionPlan?: SubscriptionPlanName
+  subscriptionStatus?: SubscriptionStatus
 }
 
 export interface Booking {
@@ -161,6 +166,7 @@ export type LocationStatus = 'Active' | 'Paused' | 'Pending'
 export type SubscriptionPlanName = string
 export type SubscriptionStatus = 'Active' | 'Expired' | 'None' | 'Cancelled'
 export type SubscriptionBilling = 'Monthly' | 'Yearly' | 'Manual'
+export type SubscriptionAudience = 'Employee' | 'Hospital' | 'Ambulance owner'
 export type FranchiseStatus = 'Active' | 'Pending' | 'Suspended'
 
 export interface VehiclePhoto {
@@ -171,6 +177,7 @@ export interface VehiclePhoto {
 export interface SubscriptionPlan {
   id: string
   name: string
+  audience: SubscriptionAudience
   monthlyPrice: string
   yearlyPrice: string
   features: string[]
@@ -178,10 +185,11 @@ export interface SubscriptionPlan {
   popular?: boolean
 }
 
-export interface UserSubscription {
+export interface EntitySubscription {
   id: string
-  userId: string
-  userName: string
+  subscriberId: string
+  subscriberType: SubscriptionAudience
+  subscriberName: string
   email: string
   plan: SubscriptionPlanName
   billing: SubscriptionBilling
@@ -191,6 +199,9 @@ export interface UserSubscription {
   activatedBy?: string
   notes?: string
 }
+
+/** @deprecated Use EntitySubscription */
+export type UserSubscription = EntitySubscription
 
 export interface SubscriptionLocationState {
   justActivated?: string

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { clearSession } from '../auth/session'
 import type { LucideIcon } from 'lucide-react'
 import {
   Ambulance,
@@ -134,7 +135,7 @@ export default function Layout() {
           <button
             className="icon-btn"
             onClick={() => {
-              localStorage.removeItem('ivmediz-admin')
+              clearSession()
               navigate('/login')
             }}
             title="Sign out"

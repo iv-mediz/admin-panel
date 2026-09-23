@@ -19,10 +19,10 @@ import Franchises from './pages/Franchises'
 import CreatePlan from './pages/CreatePlan'
 import Subscriptions from './pages/Subscriptions'
 import Team from './pages/Team'
+import { isAuthenticated } from './auth/session'
 
 function Protected({ children }: { children: ReactNode }) {
-  const ok = localStorage.getItem('ivmediz-admin') === '1'
-  if (!ok) return <Navigate to="/login" replace />
+  if (!isAuthenticated()) return <Navigate to="/login" replace />
   return children
 }
 
