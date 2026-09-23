@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/v1/:path*",
-      "destination": "http://ivmedizbackend.repsoft.in/api/v1/:path*"
+      "destination": "http://13.207.45.84:3000/api/v1/:path*"
     }
   ]
 }

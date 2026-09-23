@@ -8,9 +8,13 @@ In **Vercel → your project → Settings → Environment Variables**, add:
 |------|--------|--------------|
 | `VITE_API_BASE_URL` | `http://ivmedizbackend.repsoft.in/api/v1` | Production, Preview, Development |
 
-The admin app is served over **HTTPS** on Vercel. Browsers block direct `http://` API calls (mixed content). This repo includes **`vercel.json`** rewrites so the panel calls **`/api/v1/...` on the same origin** and Vercel proxies to the backend. You can keep the env var as `http://ivmedizbackend.repsoft.in/api/v1`; in the browser it automatically uses the HTTPS proxy.
+The admin app is served over **HTTPS** on Vercel. Browsers block direct `http://` API calls (mixed content). **`vercel.json`** rewrites `/api/v1/*` to the EC2 API (`13.207.45.84:3000`). In the browser, requests use **`https://<your-vercel-app>/api/v1`**.
 
-Optional later: enable TLS on the API host and set `https://ivmedizbackend.repsoft.in/api/v1`.
+Keep `VITE_API_BASE_URL=http://ivmedizbackend.repsoft.in/api/v1` (or the IP URL) — the client upgrades to the same-origin proxy on HTTPS.
+
+**Infrastructure checklist (EC2):**
+- Security group: allow **TCP 3000** (API) from the internet; open **80/443** when using nginx + domain.
+- DNS: **A record** `ivmedizbackend.repsoft.in` → Elastic IP (required for mobile app domain URL).
 
 After adding or changing variables, **redeploy** (Deployments → ⋮ → Redeploy). Vite bakes `VITE_*` values in at build time.
 
