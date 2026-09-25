@@ -1,8 +1,8 @@
-import { Plus, Search, Star } from 'lucide-react'
+import { Plus, Search } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import * as adminApi from '../api/admin'
-import HospitalImageUpload from '../components/HospitalImageUpload'
+import HospitalImageUpload, { resolveMediaUrl } from '../components/HospitalImageUpload'
 import LocationFilters from '../components/LocationFilters'
 import Modal from '../components/Modal'
 import StatusChip from '../components/StatusChip'
@@ -19,6 +19,7 @@ export default function Hospitals() {
   const { hospitals, setHospitalStatus, setHospitals } = useDirectory()
   const [query, setQuery] = useState('')
   const [brandingHospital, setBrandingHospital] = useState<Hospital | null>(null)
+  const [detailHospital, setDetailHospital] = useState<Hospital | null>(null)
   const [uploading, setUploading] = useState(false)
   const [tab, setTab] = useState<(typeof TABS)[number]>('All')
   const [stateFilter, setStateFilter] = useState('All')
@@ -92,9 +93,8 @@ export default function Hospitals() {
             <tr>
               <th>Hospital</th>
               <th>City</th>
-              <th>Open jobs</th>
-              <th>Rating</th>
               <th>Contact</th>
+              <th>Applied</th>
               <th>Status</th>
               <th />
             </tr>
@@ -102,7 +102,7 @@ export default function Hospitals() {
           <tbody>
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={7} style={{ textAlign: 'center', padding: '32px 16px', color: '#667085' }}>
+                <td colSpan={6} style={{ textAlign: 'center', padding: '32px 16px', color: '#667085' }}>
                   No hospitals yet. Use &quot;Onboard hospital&quot; to add your first partner.
                 </td>
               </tr>
@@ -117,22 +117,19 @@ export default function Hospitals() {
                   {h.city}
                   <div className="cell-sub">{h.state}</div>
                 </td>
-                <td>{h.jobs}</td>
                 <td>
-                  {h.rating ? (
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontWeight: 700 }}>
-                      <Star size={14} color="#f59e0b" fill="#f59e0b" />
-                      {h.rating}
-                    </span>
-                  ) : (
-                    '—'
-                  )}
+                  <div className="cell-title">{h.contactPerson || '—'}</div>
+                  <div className="cell-sub">{h.contact}</div>
+                  {h.email ? <div className="cell-sub">{h.email}</div> : null}
                 </td>
-                <td>{h.contact}</td>
+                <td>{formatApplied(h.createdAt)}</td>
                 <td>
                   <StatusChip label={h.status} />
                 </td>
                 <td>
+                  <button className="btn btn-ghost btn-sm" type="button" onClick={() => setDetailHospital(h)}>
+                    Details
+                  </button>
                   <button
                     className="btn btn-ghost btn-sm"
                     type="button"
@@ -172,6 +169,65 @@ export default function Hospitals() {
           />
         </Modal>
       )}
+
+      {detailHospital && (
+        <Modal title={detailHospital.name} onClose={() => setDetailHospital(null)}>
+          <div className="detail-grid">
+            <Meta label="Applied" value={formatApplied(detailHospital.createdAt)} />
+            <Meta label="Type" value={detailHospital.type || '—'} />
+            <Meta label="Registration" value={detailHospital.registrationNo || '—'} />
+            <Meta label="Address" value={detailHospital.address || '—'} />
+            <Meta
+              label="Location"
+              value={
+                [detailHospital.address, detailHospital.city, detailHospital.state]
+                    .map((part) => (part ?? '').trim())
+                    .filter((part) => part.length > 0)
+                    .join(', ') || '—'
+              }
+            />
+            <Meta label="Contact person" value={detailHospital.contactPerson || '—'} />
+            <Meta label="Phone" value={detailHospital.contact || '—'} />
+            <Meta label="Email" value={detailHospital.email || '—'} />
+            <Meta label="Departments" value={detailHospital.departments?.join(', ') || '—'} />
+            <Meta label="Notes" value={detailHospital.notes || '—'} />
+          </div>
+          {(resolveMediaUrl(detailHospital.logoUrl) || resolveMediaUrl(detailHospital.coverPhotoUrl)) && (
+            <div style={{ display: 'flex', gap: 12, marginTop: 14 }}>
+              {resolveMediaUrl(detailHospital.logoUrl) ? (
+                <img
+                  src={resolveMediaUrl(detailHospital.logoUrl)!}
+                  alt="Logo"
+                  style={{ width: 72, height: 72, objectFit: 'cover', borderRadius: 12 }}
+                />
+              ) : null}
+              {resolveMediaUrl(detailHospital.coverPhotoUrl) ? (
+                <img
+                  src={resolveMediaUrl(detailHospital.coverPhotoUrl)!}
+                  alt="Cover"
+                  style={{ height: 72, maxWidth: 180, objectFit: 'cover', borderRadius: 12 }}
+                />
+              ) : null}
+            </div>
+          )}
+        </Modal>
+      )}
+    </div>
+  )
+}
+
+function formatApplied(value?: string) {
+  if (!value) return '—'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return '—'
+  return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+}
+
+function Meta({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="meta">
+      <span>{label}</span>
+      <strong>{value}</strong>
     </div>
   )
 }

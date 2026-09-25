@@ -60,6 +60,8 @@ export default function OnboardAmbulance() {
       state: form.state,
       base: form.base,
       status: 'Pending',
+      license: form.license,
+      notes: form.notes,
       vehiclePhotos: [
         { label: 'Front view', uploadedAt: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) },
         { label: 'Side view', uploadedAt: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) },

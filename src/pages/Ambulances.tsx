@@ -162,6 +162,7 @@ export default function Ambulances() {
                 <th>Operator</th>
                 <th>Driver</th>
                 <th>Base</th>
+                <th>Applied</th>
                 <th>Photos</th>
                 <th>Status</th>
                 <th />
@@ -183,6 +184,7 @@ export default function Ambulances() {
                     {v.base}
                     <div className="cell-sub">{v.city}</div>
                   </td>
+                  <td>{formatApplied(v.createdAt)}</td>
                   <td>
                     {(v.vehiclePhotos?.length ?? 0) > 0 ? (
                       <span className="tag">{v.vehiclePhotos!.length} uploaded</span>
@@ -273,7 +275,19 @@ export default function Ambulances() {
             </div>
             <div className="meta">
               <span>City</span>
-              <strong>{selected.city}</strong>
+              <strong>{selected.city}, {selected.state}</strong>
+            </div>
+            <div className="meta">
+              <span>Applied</span>
+              <strong>{formatApplied(selected.createdAt)}</strong>
+            </div>
+            <div className="meta">
+              <span>Licence</span>
+              <strong>{selected.license || '—'}</strong>
+            </div>
+            <div className="meta">
+              <span>Notes</span>
+              <strong>{selected.notes || '—'}</strong>
             </div>
           </div>
 
@@ -313,4 +327,11 @@ export default function Ambulances() {
       )}
     </div>
   )
+}
+
+function formatApplied(value?: string) {
+  if (!value) return '—'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return '—'
+  return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
 }

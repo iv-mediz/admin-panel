@@ -94,6 +94,10 @@ export interface Hospital {
   subscriptionStatus?: SubscriptionStatus
   logoUrl?: string
   coverPhotoUrl?: string
+  address?: string
+  registrationNo?: string
+  notes?: string
+  createdAt?: string
 }
 
 export interface AmbulanceVehicle {
@@ -112,6 +116,9 @@ export interface AmbulanceVehicle {
   email?: string
   subscriptionPlan?: SubscriptionPlanName
   subscriptionStatus?: SubscriptionStatus
+  license?: string
+  notes?: string
+  createdAt?: string
 }
 
 export interface Booking {

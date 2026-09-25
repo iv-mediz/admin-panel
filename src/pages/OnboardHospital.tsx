@@ -79,6 +79,9 @@ export default function OnboardHospital() {
       email: form.email,
       status: 'Pending' as const,
       departments: form.departments,
+      address: form.address,
+      registrationNo: form.registration,
+      notes: form.notes,
     }
     setSubmitting(true)
     try {
