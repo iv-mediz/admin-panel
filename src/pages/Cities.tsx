@@ -54,12 +54,12 @@ export default function Cities() {
     <div className="page">
       <div className="page-head">
         <div>
-          <h3>Cities</h3>
+          <h3>Cities / districts</h3>
           <p>Cities and districts used for jobs, hospitals and ambulance pickup</p>
         </div>
         <button className="btn btn-primary" onClick={() => setOpen(true)}>
           <Plus size={16} />
-          Add city
+          Add city / district
         </button>
       </div>
 
@@ -87,7 +87,7 @@ export default function Cities() {
         <table>
           <thead>
             <tr>
-              <th>City</th>
+              <th>City / district</th>
               <th>State</th>
               <th>Hospitals</th>
               <th>Status</th>
@@ -123,7 +123,7 @@ export default function Cities() {
       </div>
 
       {open && (
-        <Modal title="Add city" onClose={() => setOpen(false)}>
+        <Modal title="Add city / district" onClose={() => setOpen(false)}>
           <form onSubmit={submit}>
             <div className="form-grid">
               <div className="field">
@@ -145,7 +145,7 @@ export default function Cities() {
               <button type="button" className="btn btn-outline" onClick={() => setOpen(false)}>
                 Cancel
               </button>
-              <button className="btn btn-primary">Add city</button>
+              <button className="btn btn-primary">Add city / district</button>
             </div>
           </form>
         </Modal>

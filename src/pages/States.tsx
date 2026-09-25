@@ -129,7 +129,7 @@ export default function States() {
                 </td>
                 <td className="row-actions">
                   <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/cities?state=${s.id}`)}>
-                    Cities
+                    Cities / districts
                   </button>
                   {s.status !== 'Active' && (
                     <button className="btn btn-ghost btn-sm" onClick={() => setStateStatus(s.id, 'Active')}>

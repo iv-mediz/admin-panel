@@ -1,5 +1,6 @@
 import { Plus, Search } from 'lucide-react'
 import { useMemo, useState, type FormEvent } from 'react'
+import CityDistrictSelect from '../components/CityDistrictSelect'
 import LocationFilters from '../components/LocationFilters'
 import Modal from '../components/Modal'
 import StatusChip from '../components/StatusChip'
@@ -15,7 +16,8 @@ const TYPES = ['All', 'Locum', 'Part Time', 'Full Time'] as const
 interface JobForm {
   title: string
   hospitalId: string
-  location: string
+  state: string
+  cityDistrict: string
   salary: string
   experience: string
   type: JobType
@@ -28,7 +30,8 @@ interface JobForm {
 const emptyJob: JobForm = {
   title: '',
   hospitalId: '',
-  location: '',
+  state: 'Telangana',
+  cityDistrict: '',
   salary: '',
   experience: '',
   type: 'Full Time',
@@ -39,7 +42,7 @@ const emptyJob: JobForm = {
 }
 
 export default function Jobs() {
-  const { jobs: items, hospitals, setJobs, loading, error, refresh } = useDirectory()
+  const { jobs: items, hospitals, states, setJobs, loading, error, refresh } = useDirectory()
   const partnerHospitals = useMemo(
     () => hospitals.filter((h) => h.status === 'Partner'),
     [hospitals],
@@ -75,10 +78,12 @@ export default function Jobs() {
   }, [items, query, category, type, stateFilter, districtFilter])
 
   function applyHospital(hospital: Hospital) {
+    const cityDistrict = hospital.district?.trim() || hospital.city?.trim() || ''
     setForm((prev) => ({
       ...prev,
       hospitalId: hospital.id,
-      location: `${hospital.city}, ${hospital.state}`,
+      state: hospital.state,
+      cityDistrict,
     }))
   }
 
@@ -88,13 +93,15 @@ export default function Jobs() {
     const hospital = partnerHospitals.find((h) => h.id === form.hospitalId)
     if (!hospital) return
 
+    const district = form.cityDistrict.trim() || hospital.district || hospital.city
+    const stateName = form.state.trim() || hospital.state
     const payload: Partial<Job> = {
       title: form.title,
       hospitalId: form.hospitalId,
       hospital: hospital.name,
-      location: form.location || `${hospital.city}, ${hospital.state}`,
-      state: hospital.state,
-      district: hospital.district,
+      location: `${district}, ${stateName}`,
+      state: stateName,
+      district,
       salary: form.salary,
       experience: form.experience,
       type: form.type,
@@ -244,11 +251,29 @@ export default function Jobs() {
                   ))}
                 </select>
               </div>
-              <Field
-                label="Location"
-                value={form.location}
-                onChange={(v) => setForm({ ...form, location: v })}
-                hint={selectedHospital ? `From ${selectedHospital.name}` : undefined}
+              <div className="field">
+                <label>State</label>
+                <select
+                  value={form.state}
+                  onChange={(e) =>
+                    setForm((prev) => ({ ...prev, state: e.target.value, cityDistrict: '' }))
+                  }
+                  required
+                >
+                  {(states.length ? states : [{ id: 'ts', name: 'Telangana' }]).map((s) => (
+                    <option key={s.id} value={s.name}>
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
+                {selectedHospital ? (
+                  <span className="hint">Prefilled from {selectedHospital.name}; you can change if needed.</span>
+                ) : null}
+              </div>
+              <CityDistrictSelect
+                stateName={form.state}
+                value={form.cityDistrict}
+                onChange={(v) => setForm({ ...form, cityDistrict: v })}
               />
               <Field label="Salary" value={form.salary} onChange={(v) => setForm({ ...form, salary: v })} />
               <Field label="Experience" value={form.experience} onChange={(v) => setForm({ ...form, experience: v })} />
@@ -281,7 +306,12 @@ export default function Jobs() {
               </button>
               <button
                 className="btn btn-primary"
-                disabled={saving || partnerHospitals.length === 0 || !form.hospitalId}
+                disabled={
+                  saving ||
+                  partnerHospitals.length === 0 ||
+                  !form.hospitalId ||
+                  !form.cityDistrict.trim()
+                }
               >
                 {saving ? 'Publishing…' : 'Publish job'}
               </button>
