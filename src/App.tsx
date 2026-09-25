@@ -15,7 +15,8 @@ import Professionals from './pages/Professionals'
 import Settings from './pages/Settings'
 import States from './pages/States'
 import Cities from './pages/Cities'
-import Franchises from './pages/Franchises'
+import Specialties from './pages/Specialties'
+import Franchises from './pages/Franchises
 import CreatePlan from './pages/CreatePlan'
 import Subscriptions from './pages/Subscriptions'
 import Team from './pages/Team'
@@ -50,6 +51,7 @@ export default function App() {
         <Route path="/ambulances/onboard" element={<OnboardAmbulance />} />
         <Route path="/states" element={<States />} />
         <Route path="/cities" element={<Cities />} />
+        <Route path="/specialties" element={<Specialties />} />
         <Route path="/franchises" element={<Franchises />} />
         <Route path="/subscriptions" element={<Subscriptions />} />
         <Route path="/subscriptions/plans/create" element={<CreatePlan />} />

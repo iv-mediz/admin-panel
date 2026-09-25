@@ -1256,6 +1256,13 @@ tbody tr:hover {
   text-align: center;
 }
 
+.vehicle-photo img {
+  width: 100%;
+  height: 72px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
 .vehicle-photo svg {
   color: var(--primary);
 }

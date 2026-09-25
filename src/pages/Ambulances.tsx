@@ -2,6 +2,7 @@ import { Ambulance, Baby, Camera, HeartPulse, Plus, Search, type LucideIcon } fr
 import { useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import LocationFilters from '../components/LocationFilters'
+import { resolveMediaUrl } from '../components/HospitalImageUpload'
 import Modal from '../components/Modal'
 import StatusChip from '../components/StatusChip'
 import { useDirectory } from '../data/directory'
@@ -300,7 +301,11 @@ export default function Ambulances() {
             <div className="vehicle-photo-grid">
               {selected.vehiclePhotos!.map((photo) => (
                 <div className="vehicle-photo" key={photo.label}>
-                  <Camera size={28} />
+                  {photo.fileUrl && resolveMediaUrl(photo.fileUrl) ? (
+                    <img src={resolveMediaUrl(photo.fileUrl)!} alt={photo.label} />
+                  ) : (
+                    <Camera size={28} />
+                  )}
                   <span>{photo.label}</span>
                   {photo.uploadedAt && <small>{photo.uploadedAt}</small>}
                 </div>

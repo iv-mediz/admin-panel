@@ -12,6 +12,7 @@ import type {
   Professional,
   SubscriptionPlan,
   TeamMember,
+  Specialty,
 } from '../types'
 import { apiUrl, hasApiBackend } from '../config/api'
 import { getAccessToken } from '../auth/session'
@@ -186,6 +187,28 @@ export async function createState(body: Partial<AppState>) {
 
 export async function createCity(body: Partial<City>) {
   return apiRequest<City>('locations/cities', { method: 'POST', body: JSON.stringify(body) })
+}
+
+export async function fetchSpecialties() {
+  return apiRequest<Specialty[]>('specialties')
+}
+
+export async function createSpecialty(body: Partial<Specialty>) {
+  return apiRequest<Specialty>('specialties', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  })
+}
+
+export async function updateSpecialty(id: string, body: Partial<Specialty>) {
+  return apiRequest<Specialty>(`specialties/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(body),
+  })
+}
+
+export async function deleteSpecialty(id: string) {
+  return apiRequest<{ success: boolean }>(`specialties/${id}`, { method: 'DELETE' })
 }
 
 export async function fetchFranchises() {

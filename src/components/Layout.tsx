@@ -14,6 +14,7 @@ import {
   Menu,
   Settings,
   Store,
+  Stethoscope,
   CreditCard,
   UserRound,
   Users,
@@ -55,6 +56,7 @@ const NAV: NavGroup[] = [
     items: [
       { to: '/states', label: 'States', icon: MapPinned },
       { to: '/cities', label: 'Cities / districts', icon: MapPin },
+      { to: '/specialties', label: 'Specialties', icon: Stethoscope },
       { to: '/franchises', label: 'Franchises', icon: Store },
     ],
   },
@@ -82,6 +84,7 @@ function pageMeta(path: string): [string, string] {
     '/team': ['Team', 'Internal staff who run the iv mediz admin panel'],
     '/states': ['States', 'States where iv mediz is live'],
     '/cities': ['Cities / districts', 'Cities and districts for jobs and ambulance pickup'],
+    '/specialties': ['Specialties', 'Job specialties shown on the mobile home screen'],
     '/franchises': ['Franchises', 'Partners who manage iv mediz in assigned locations'],
     '/subscriptions': ['Subscriptions', 'Plans and manual activation for mobile users'],
     '/notifications': ['Notifications', 'Alerts sent to the mobile app'],

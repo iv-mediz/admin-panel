@@ -33,6 +33,7 @@ import type {
   TeamStatus,
   VehicleStatus,
   ApplicationStatus,
+  Specialty,
 } from '../types'
 
 interface DirectoryContextValue {
@@ -49,6 +50,7 @@ interface DirectoryContextValue {
   team: TeamMember[]
   states: AppState[]
   cities: City[]
+  specialties: Specialty[]
   professionals: Professional[]
   subscriptionPlans: SubscriptionPlan[]
   userSubscriptions: EntitySubscription[]
@@ -61,6 +63,9 @@ interface DirectoryContextValue {
   addMember: (member: TeamMember) => void
   addState: (state: AppState) => void
   addCity: (city: City) => void
+  addSpecialty: (specialty: Specialty) => void
+  setSpecialtyStatus: (id: string, status: LocationStatus) => void
+  removeSpecialty: (specialty: Specialty) => void
   addFranchise: (franchise: Franchise) => void
   addProfessional: (professional: Professional) => void
   removeProfessional: (id: string) => void
@@ -97,6 +102,7 @@ async function loadAllData() {
     team,
     states,
     cities,
+    specialties,
     professionals,
     subscriptionPlans,
     userSubscriptions,
@@ -111,6 +117,7 @@ async function loadAllData() {
     adminApi.fetchTeam(),
     adminApi.fetchStates(),
     adminApi.fetchCities(),
+    adminApi.fetchSpecialties(),
     adminApi.fetchProfessionals(),
     adminApi.fetchSubscriptionPlans(),
     adminApi.fetchSubscriptions(),
@@ -126,6 +133,7 @@ async function loadAllData() {
     team,
     states,
     cities,
+    specialties,
     professionals,
     subscriptionPlans,
     userSubscriptions,
@@ -146,6 +154,7 @@ export function DirectoryProvider({ children }: { children: ReactNode }) {
   const [team, setTeam] = useState<TeamMember[]>([])
   const [states, setStates] = useState<AppState[]>([])
   const [cities, setCities] = useState<City[]>([])
+  const [specialties, setSpecialties] = useState<Specialty[]>([])
   const [professionals, setProfessionals] = useState<Professional[]>([])
   const [subscriptionPlans, setSubscriptionPlans] = useState<SubscriptionPlan[]>([])
   const [userSubscriptions, setUserSubscriptions] = useState<EntitySubscription[]>([])
@@ -165,6 +174,7 @@ export function DirectoryProvider({ children }: { children: ReactNode }) {
       setTeam(data.team)
       setStates(data.states)
       setCities(data.cities)
+      setSpecialties(data.specialties)
       setProfessionals(data.professionals)
       setSubscriptionPlans(data.subscriptionPlans)
       setUserSubscriptions(
@@ -201,6 +211,7 @@ export function DirectoryProvider({ children }: { children: ReactNode }) {
       team,
       states,
       cities,
+      specialties,
       professionals,
       subscriptionPlans,
       userSubscriptions,
@@ -254,6 +265,27 @@ export function DirectoryProvider({ children }: { children: ReactNode }) {
           return
         }
         setCities((prev) => [city, ...prev])
+      },
+      addSpecialty: (specialty) => {
+        if (hasApiBackend()) {
+          void adminApi.createSpecialty(specialty).then((created) => {
+            setSpecialties((prev) => [...prev, created])
+          })
+          return
+        }
+        setSpecialties((prev) => [...prev, specialty])
+      },
+      setSpecialtyStatus: (id, status) => {
+        setSpecialties((prev) => prev.map((s) => (s.id === id ? { ...s, status } : s)))
+        if (hasApiBackend()) {
+          void adminApi.updateSpecialty(id, { status })
+        }
+      },
+      removeSpecialty: (specialty) => {
+        setSpecialties((prev) => prev.filter((s) => s.id !== specialty.id))
+        if (hasApiBackend()) {
+          void adminApi.deleteSpecialty(specialty.id)
+        }
       },
       addFranchise: (franchise) => {
         setFranchises((prev) => [franchise, ...prev])
@@ -391,6 +423,7 @@ export function DirectoryProvider({ children }: { children: ReactNode }) {
       team,
       states,
       cities,
+      specialties,
       professionals,
       subscriptionPlans,
       userSubscriptions,

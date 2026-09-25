@@ -183,6 +183,7 @@ export type FranchiseStatus = 'Active' | 'Pending' | 'Suspended'
 export interface VehiclePhoto {
   label: string
   uploadedAt?: string
+  fileUrl?: string
 }
 
 export interface SubscriptionPlan {
@@ -247,6 +248,17 @@ export interface City {
   name: string
   stateId: string
   stateName: string
+  status: LocationStatus
+}
+
+export interface Specialty {
+  id: string
+  name: string
+  jobCategory: JobCategory
+  query: string
+  icon: string
+  color: string
+  sortOrder: number
   status: LocationStatus
 }
 
