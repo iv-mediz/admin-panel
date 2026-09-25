@@ -54,6 +54,7 @@ export interface Application {
   email: string
   employmentPreference: JobType
   timeAvailability?: string[]
+  resumeUrl?: string
 }
 
 export interface Professional {

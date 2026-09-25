@@ -1,6 +1,7 @@
 import { Search } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import LocationFilters from '../components/LocationFilters'
+import { resolveMediaUrl } from '../components/HospitalImageUpload'
 import Modal from '../components/Modal'
 import StatusChip from '../components/StatusChip'
 import { useDirectory } from '../data/directory'
@@ -153,6 +154,18 @@ export default function Applications() {
             <div className="meta">
               <span>Email</span>
               <strong>{selected.email}</strong>
+            </div>
+            <div className="meta">
+              <span>Resume</span>
+              <strong>
+                {resolveMediaUrl(selected.resumeUrl) ? (
+                  <a href={resolveMediaUrl(selected.resumeUrl)!} target="_blank" rel="noreferrer">
+                    View resume
+                  </a>
+                ) : (
+                  'Not uploaded'
+                )}
+              </strong>
             </div>
             <div className="meta">
               <span>Experience</span>
