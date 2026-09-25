@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
+import CityDistrictSelect, { cityDistrictPayload } from '../components/CityDistrictSelect'
 import { useDirectory } from '../data/directory'
 
 const STEPS = ['Hospital', 'Contact', 'Review'] as const
@@ -10,8 +11,7 @@ interface HospitalForm {
   type: string
   registration: string
   address: string
-  city: string
-  district: string
+  cityDistrict: string
   state: string
   contactPerson: string
   phone: string
@@ -25,8 +25,7 @@ const empty: HospitalForm = {
   type: 'Multi-speciality',
   registration: '',
   address: '',
-  city: '',
-  district: '',
+  cityDistrict: '',
   state: 'Telangana',
   contactPerson: '',
   phone: '',
@@ -37,7 +36,7 @@ const empty: HospitalForm = {
 
 export default function OnboardHospital() {
   const navigate = useNavigate()
-  const { addHospital } = useDirectory()
+  const { addHospital, states } = useDirectory()
   const [step, setStep] = useState(0)
   const [form, setForm] = useState<HospitalForm>(empty)
 
@@ -60,12 +59,13 @@ export default function OnboardHospital() {
       setStep(step + 1)
       return
     }
+    const loc = cityDistrictPayload(form.cityDistrict)
     addHospital({
       id: `h${Date.now()}`,
       name: form.name,
       type: form.type,
-      city: form.city,
-      district: form.district || form.city,
+      city: loc.city,
+      district: loc.district,
       state: form.state,
       jobs: 0,
       rating: 0,
@@ -114,15 +114,28 @@ export default function OnboardHospital() {
             </div>
             <Field label="Registration / NABH no." value={form.registration} onChange={(v) => setField('registration', v)} optional />
             <Field label="Street address" value={form.address} onChange={(v) => setField('address', v)} />
-            <Field label="City" value={form.city} onChange={(v) => setField('city', v)} />
-            <Field label="District" value={form.district} onChange={(v) => setField('district', v)} />
             <div className="field">
               <label>State</label>
-              <select value={form.state} onChange={(e) => setField('state', e.target.value)}>
-                <option>Telangana</option>
-                <option>Karnataka</option>
+              <select
+                value={form.state}
+                onChange={(e) => {
+                  setForm((prev) => ({ ...prev, state: e.target.value, cityDistrict: '' }))
+                }}
+              >
+                {(states.length ? states : [{ id: 'ts', name: 'Telangana' }, { id: 'ka', name: 'Karnataka' }]).map(
+                  (s) => (
+                    <option key={s.id} value={s.name}>
+                      {s.name}
+                    </option>
+                  ),
+                )}
               </select>
             </div>
+            <CityDistrictSelect
+              stateName={form.state}
+              value={form.cityDistrict}
+              onChange={(v) => setField('cityDistrict', v)}
+            />
           </div>
         )}
 
@@ -161,7 +174,7 @@ export default function OnboardHospital() {
             <div className="detail-grid">
               <Meta label="Hospital" value={form.name} />
               <Meta label="Type" value={form.type} />
-              <Meta label="Location" value={`${form.city}, ${form.state}`} />
+              <Meta label="Location" value={`${form.cityDistrict}, ${form.state}`} />
               <Meta label="Contact" value={form.contactPerson} />
               <Meta label="Phone" value={form.phone} />
               <Meta label="Email" value={form.email} />

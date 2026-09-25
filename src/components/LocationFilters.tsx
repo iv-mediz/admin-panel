@@ -45,7 +45,7 @@ export default function LocationFilters({
       </select>
       {showDistrict && (
         <select className="select" value={district} onChange={(e) => onDistrictChange(e.target.value)}>
-          <option value="All">All districts</option>
+          <option value="All">All cities / districts</option>
           {districts.map((d) => (
             <option key={d} value={d}>
               {d}

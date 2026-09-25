@@ -309,7 +309,10 @@ export default function Professionals() {
             </div>
             <div className="field">
               <label>State</label>
-              <select value={form.state} onChange={(e) => setField('state', e.target.value)}>
+              <select
+                value={form.state}
+                onChange={(e) => setForm((prev) => ({ ...prev, state: e.target.value, district: '' }))}
+              >
                 {states.map((s) => (
                   <option key={s.id} value={s.name}>
                     {s.name}
@@ -318,10 +321,11 @@ export default function Professionals() {
               </select>
             </div>
             <div className="field">
-              <label>District</label>
-              <select value={form.district} onChange={(e) => setField('district', e.target.value)}>
+              <label>City / district</label>
+              <select value={form.district} onChange={(e) => setField('district', e.target.value)} required>
+                <option value="">Select city / district</option>
                 {cities
-                  .filter((c) => c.stateName === form.state)
+                  .filter((c) => c.stateName === form.state && c.status !== 'Paused')
                   .map((c) => (
                     <option key={c.id} value={c.name}>
                       {c.name}

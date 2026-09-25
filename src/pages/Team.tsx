@@ -1,5 +1,6 @@
 import { Plus, Search } from 'lucide-react'
 import { useMemo, useState, type FormEvent } from 'react'
+import CityDistrictSelect, { cityDistrictPayload } from '../components/CityDistrictSelect'
 import LocationFilters from '../components/LocationFilters'
 import Modal from '../components/Modal'
 import StatusChip from '../components/StatusChip'
@@ -14,7 +15,8 @@ interface MemberForm {
   role: TeamRole
   email: string
   phone: string
-  city: string
+  state: string
+  cityDistrict: string
 }
 
 const empty: MemberForm = {
@@ -22,11 +24,12 @@ const empty: MemberForm = {
   role: 'Support',
   email: '',
   phone: '',
-  city: 'Hyderabad',
+  state: 'Telangana',
+  cityDistrict: '',
 }
 
 export default function Team() {
-  const { team, addMember, setMemberStatus } = useDirectory()
+  const { team, addMember, setMemberStatus, states } = useDirectory()
   const [query, setQuery] = useState('')
   const [role, setRole] = useState<(typeof ROLES)[number]>('All')
   const [stateFilter, setStateFilter] = useState('All')
@@ -46,11 +49,16 @@ export default function Team() {
 
   function submit(e: FormEvent) {
     e.preventDefault()
+    const loc = cityDistrictPayload(form.cityDistrict)
     addMember({
       id: `t${Date.now()}`,
-      ...form,
-      district: form.city,
-      state: form.city === 'Hyderabad' ? 'Telangana' : 'Karnataka',
+      name: form.name,
+      role: form.role,
+      email: form.email,
+      phone: form.phone,
+      city: loc.city,
+      district: loc.district,
+      state: form.state,
       joined: 'Just now',
       status: 'Invited',
     })
@@ -186,12 +194,23 @@ export default function Team() {
                 <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} required />
               </div>
               <div className="field">
-                <label>City</label>
-                <select value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })}>
-                  <option>Hyderabad</option>
-                  <option>Bengaluru</option>
+                <label>State</label>
+                <select
+                  value={form.state}
+                  onChange={(e) => setForm({ ...form, state: e.target.value, cityDistrict: '' })}
+                >
+                  {(states.length ? states : [{ id: 'ts', name: 'Telangana' }]).map((s) => (
+                    <option key={s.id} value={s.name}>
+                      {s.name}
+                    </option>
+                  ))}
                 </select>
               </div>
+              <CityDistrictSelect
+                stateName={form.state}
+                value={form.cityDistrict}
+                onChange={(v) => setForm({ ...form, cityDistrict: v })}
+              />
             </div>
             <div className="modal-actions">
               <button type="button" className="btn btn-outline" onClick={() => setOpen(false)}>
