@@ -1,7 +1,10 @@
 import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
+import * as adminApi from '../api/admin'
 import CityDistrictSelect, { cityDistrictPayload } from '../components/CityDistrictSelect'
+import HospitalImageUpload from '../components/HospitalImageUpload'
 import { useDirectory } from '../data/directory'
+import { hasApiBackend } from '../config/api'
 
 const STEPS = ['Hospital', 'Contact', 'Review'] as const
 const DEPARTMENTS = ['Nursing', 'Doctors', 'Allied Health', 'Pharmacy', 'Critical Care', 'Cardiology'] as const
@@ -36,9 +39,12 @@ const empty: HospitalForm = {
 
 export default function OnboardHospital() {
   const navigate = useNavigate()
-  const { addHospital, states } = useDirectory()
+  const { addHospital, prependHospital, states } = useDirectory()
   const [step, setStep] = useState(0)
   const [form, setForm] = useState<HospitalForm>(empty)
+  const [logoFile, setLogoFile] = useState<File | null>(null)
+  const [coverFile, setCoverFile] = useState<File | null>(null)
+  const [submitting, setSubmitting] = useState(false)
 
   function setField<K extends keyof HospitalForm>(key: K, value: HospitalForm[K]) {
     setForm((prev) => ({ ...prev, [key]: value }))
@@ -53,15 +59,14 @@ export default function OnboardHospital() {
     }))
   }
 
-  function next(e: FormEvent) {
+  async function next(e: FormEvent) {
     e.preventDefault()
     if (step < 2) {
       setStep(step + 1)
       return
     }
     const loc = cityDistrictPayload(form.cityDistrict)
-    addHospital({
-      id: `h${Date.now()}`,
+    const payload = {
       name: form.name,
       type: form.type,
       city: loc.city,
@@ -72,10 +77,31 @@ export default function OnboardHospital() {
       contact: form.phone,
       contactPerson: form.contactPerson,
       email: form.email,
-      status: 'Pending',
+      status: 'Pending' as const,
       departments: form.departments,
-    })
-    navigate('/hospitals', { replace: true, state: { justOnboarded: form.name } })
+    }
+    setSubmitting(true)
+    try {
+      if (hasApiBackend()) {
+        let created = await adminApi.createHospital(payload)
+        let logoUrl = created.logoUrl
+        let coverPhotoUrl = created.coverPhotoUrl
+        if (logoFile) {
+          const r = await adminApi.uploadHospitalImage(created.id, 'logo', logoFile)
+          logoUrl = r.url
+        }
+        if (coverFile) {
+          const r = await adminApi.uploadHospitalImage(created.id, 'cover', coverFile)
+          coverPhotoUrl = r.url
+        }
+        prependHospital({ ...created, ...payload, logoUrl, coverPhotoUrl })
+      } else {
+        addHospital({ ...payload, id: `h${Date.now()}` })
+      }
+      navigate('/hospitals', { replace: true, state: { justOnboarded: form.name } })
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -135,6 +161,18 @@ export default function OnboardHospital() {
               stateName={form.state}
               value={form.cityDistrict}
               onChange={(v) => setField('cityDistrict', v)}
+            />
+            <HospitalImageUpload
+              label="Hospital logo"
+              kind="logo"
+              onPick={setLogoFile}
+              hint="Square logo shown in the app (JPEG, PNG, or WebP, max 5 MB)."
+            />
+            <HospitalImageUpload
+              label="Cover photo"
+              kind="cover"
+              onPick={setCoverFile}
+              hint="Wide banner for job listings and hospital profile."
             />
           </div>
         )}
@@ -196,7 +234,9 @@ export default function OnboardHospital() {
               Back
             </button>
           )}
-          <button className="btn btn-primary">{step === 2 ? 'Submit for review' : 'Continue'}</button>
+          <button className="btn btn-primary" disabled={submitting}>
+            {submitting ? 'Submitting…' : step === 2 ? 'Submit for review' : 'Continue'}
+          </button>
         </div>
       </form>
     </div>

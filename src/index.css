@@ -1271,6 +1271,66 @@ tbody tr:hover {
   color: var(--text-muted);
 }
 
+.hospital-image-upload {
+  width: 100%;
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  background: #f8fafc;
+  padding: 0;
+  cursor: pointer;
+  overflow: hidden;
+  min-height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hospital-image-upload-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  color: #344054;
+  padding: 20px;
+}
+
+.hospital-image-upload-empty-logo {
+  min-height: 140px;
+}
+
+.hospital-image-upload-empty-cover {
+  min-height: 160px;
+}
+
+.image-upload-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.image-upload-placeholder-caption {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.hospital-image-upload-logo {
+  width: 120px;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 12px;
+  margin: 12px;
+}
+
+.hospital-image-upload-cover {
+  width: 100%;
+  max-height: 160px;
+  object-fit: cover;
+  display: block;
+}
+
 @media (max-width: 1100px) {
   .stats,
   .grid-2,

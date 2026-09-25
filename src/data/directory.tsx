@@ -44,6 +44,7 @@ interface DirectoryContextValue {
   bookings: Booking[]
   notifications: AppNotification[]
   hospitals: Hospital[]
+  setHospitals: React.Dispatch<React.SetStateAction<Hospital[]>>
   fleet: AmbulanceVehicle[]
   team: TeamMember[]
   states: AppState[]
@@ -55,6 +56,7 @@ interface DirectoryContextValue {
   setJobs: React.Dispatch<React.SetStateAction<Job[]>>
   setApplications: React.Dispatch<React.SetStateAction<Application[]>>
   addHospital: (hospital: Hospital) => void
+  prependHospital: (hospital: Hospital) => void
   addVehicle: (vehicle: AmbulanceVehicle) => void
   addMember: (member: TeamMember) => void
   addState: (state: AppState) => void
@@ -194,6 +196,7 @@ export function DirectoryProvider({ children }: { children: ReactNode }) {
       bookings,
       notifications,
       hospitals,
+      setHospitals,
       fleet,
       team,
       states,
@@ -211,6 +214,9 @@ export function DirectoryProvider({ children }: { children: ReactNode }) {
           })
           return
         }
+        setHospitals((prev) => [hospital, ...prev])
+      },
+      prependHospital: (hospital) => {
         setHospitals((prev) => [hospital, ...prev])
       },
       addVehicle: (vehicle) => {

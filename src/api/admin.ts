@@ -13,7 +13,9 @@ import type {
   SubscriptionPlan,
   TeamMember,
 } from '../types'
-import { apiRequest } from './http'
+import { apiUrl, hasApiBackend } from '../config/api'
+import { getAccessToken } from '../auth/session'
+import { apiRequest, ApiError } from './http'
 
 export type LocationQuery = { state?: string; district?: string }
 
@@ -101,6 +103,43 @@ export async function createHospital(body: Partial<Hospital>) {
 
 export async function updateHospital(id: string, body: Partial<Hospital>) {
   return apiRequest<Hospital>(`hospitals/${id}`, { method: 'PATCH', body: JSON.stringify(body) })
+}
+
+export async function uploadHospitalImage(
+  hospitalId: string,
+  kind: 'logo' | 'cover',
+  file: File,
+): Promise<{ url: string }> {
+  if (!hasApiBackend()) {
+    throw new ApiError('VITE_API_BASE_URL is not configured', 0)
+  }
+  const form = new FormData()
+  form.append('file', file)
+  const headers = new Headers({ Accept: 'application/json' })
+  const token = getAccessToken()
+  if (token) headers.set('Authorization', `Bearer ${token}`)
+  const response = await fetch(apiUrl(`media/hospitals/${hospitalId}/${kind}`), {
+    method: 'POST',
+    headers,
+    body: form,
+  })
+  const text = await response.text()
+  let data: unknown = null
+  if (text) {
+    try {
+      data = JSON.parse(text)
+    } catch {
+      data = text
+    }
+  }
+  if (!response.ok) {
+    const message =
+      typeof data === 'object' && data !== null && 'message' in data
+        ? String((data as { message: unknown }).message)
+        : `Upload failed (${response.status})`
+    throw new ApiError(message, response.status)
+  }
+  return data as { url: string }
 }
 
 export async function fetchFleet(query: LocationQuery & { status?: string } = {}) {

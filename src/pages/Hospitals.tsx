@@ -1,10 +1,14 @@
 import { Plus, Search, Star } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import * as adminApi from '../api/admin'
+import HospitalImageUpload from '../components/HospitalImageUpload'
 import LocationFilters from '../components/LocationFilters'
+import Modal from '../components/Modal'
 import StatusChip from '../components/StatusChip'
 import { useDirectory } from '../data/directory'
-import type { OnboardLocationState } from '../types'
+import type { Hospital, OnboardLocationState } from '../types'
+import { hasApiBackend } from '../config/api'
 import { matchesLocation } from '../utils/locationFilter'
 
 const TABS = ['All', 'Partner', 'Pending'] as const
@@ -12,8 +16,10 @@ const TABS = ['All', 'Partner', 'Pending'] as const
 export default function Hospitals() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { hospitals, setHospitalStatus } = useDirectory()
+  const { hospitals, setHospitalStatus, setHospitals } = useDirectory()
   const [query, setQuery] = useState('')
+  const [brandingHospital, setBrandingHospital] = useState<Hospital | null>(null)
+  const [uploading, setUploading] = useState(false)
   const [tab, setTab] = useState<(typeof TABS)[number]>('All')
   const [stateFilter, setStateFilter] = useState('All')
   const [districtFilter, setDistrictFilter] = useState('All')
@@ -28,6 +34,22 @@ export default function Hospitals() {
       return matchesQuery && matchesTab && matchesLoc
     })
   }, [hospitals, query, tab, stateFilter, districtFilter])
+
+  async function uploadBranding(kind: 'logo' | 'cover', file: File) {
+    if (!brandingHospital || !hasApiBackend()) return
+    setUploading(true)
+    try {
+      const { url } = await adminApi.uploadHospitalImage(brandingHospital.id, kind, file)
+      const patch =
+        kind === 'logo' ? { logoUrl: url } : { coverPhotoUrl: url }
+      setHospitals((prev) =>
+        prev.map((h) => (h.id === brandingHospital.id ? { ...h, ...patch } : h)),
+      )
+      setBrandingHospital((cur) => (cur ? { ...cur, ...patch } : cur))
+    } finally {
+      setUploading(false)
+    }
+  }
 
   return (
     <div className="page">
@@ -111,6 +133,13 @@ export default function Hospitals() {
                   <StatusChip label={h.status} />
                 </td>
                 <td>
+                  <button
+                    className="btn btn-ghost btn-sm"
+                    type="button"
+                    onClick={() => setBrandingHospital(h)}
+                  >
+                    Branding
+                  </button>
                   {h.status === 'Pending' && (
                     <button className="btn btn-ghost btn-sm" onClick={() => setHospitalStatus(h.id, 'Partner')}>
                       Approve
@@ -122,6 +151,27 @@ export default function Hospitals() {
           </tbody>
         </table>
       </div>
+
+      {brandingHospital && (
+        <Modal title={`Branding — ${brandingHospital.name}`} onClose={() => setBrandingHospital(null)}>
+          <p className="muted" style={{ marginBottom: 12 }}>
+            Logo and cover appear in the mobile app for this hospital.
+          </p>
+          {uploading ? <p className="hint">Uploading…</p> : null}
+          <HospitalImageUpload
+            label="Logo"
+            kind="logo"
+            previewUrl={brandingHospital.logoUrl}
+            onPick={(file) => void uploadBranding('logo', file)}
+          />
+          <HospitalImageUpload
+            label="Cover photo"
+            kind="cover"
+            previewUrl={brandingHospital.coverPhotoUrl}
+            onPick={(file) => void uploadBranding('cover', file)}
+          />
+        </Modal>
+      )}
     </div>
   )
 }

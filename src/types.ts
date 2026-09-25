@@ -92,6 +92,8 @@ export interface Hospital {
   departments?: string[]
   subscriptionPlan?: SubscriptionPlanName
   subscriptionStatus?: SubscriptionStatus
+  logoUrl?: string
+  coverPhotoUrl?: string
 }
 
 export interface AmbulanceVehicle {
