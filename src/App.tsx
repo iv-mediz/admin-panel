@@ -16,7 +16,7 @@ import Settings from './pages/Settings'
 import States from './pages/States'
 import Cities from './pages/Cities'
 import Specialties from './pages/Specialties'
-import Franchises from './pages/Franchises
+import Franchises from './pages/Franchises'
 import CreatePlan from './pages/CreatePlan'
 import Subscriptions from './pages/Subscriptions'
 import Team from './pages/Team'

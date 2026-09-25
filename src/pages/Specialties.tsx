@@ -3,7 +3,7 @@ import { useMemo, useState, type FormEvent } from 'react'
 import Modal from '../components/Modal'
 import StatusChip from '../components/StatusChip'
 import { useDirectory } from '../data/directory'
-import type { JobCategory, LocationStatus, Specialty } from '../types'
+import type { JobCategory, LocationStatus } from '../types'
 
 const TABS = ['All', 'Active', 'Paused'] as const
 const CATEGORIES: JobCategory[] = ['Nursing', 'Doctors', 'Allied Health', 'Pharmacy']
