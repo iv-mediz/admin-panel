@@ -124,7 +124,13 @@ export default function Applications() {
             ))}
           </tbody>
         </table>
-        {filtered.length === 0 && <div className="empty">No applications in this tab</div>}
+        {filtered.length === 0 && (
+          <div className="empty">
+            {items.length === 0
+              ? 'No applications yet — they appear here when candidates apply from the mobile app (Under Review).'
+              : 'No applications in this tab — try All or Under Review.'}
+          </div>
+        )}
       </div>
 
       {selected && (
