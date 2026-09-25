@@ -170,6 +170,7 @@ export default function OnboardHospital() {
           <div>
             <p className="muted" style={{ marginBottom: 14 }}>
               Confirm details. The hospital stays <strong>Pending</strong> until you approve it from Hospitals.
+              The contact phone ({form.phone || '—'}) can sign in on the mobile app with OTP to manage jobs once linked.
             </p>
             <div className="detail-grid">
               <Meta label="Hospital" value={form.name} />

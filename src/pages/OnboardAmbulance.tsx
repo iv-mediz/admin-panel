@@ -145,6 +145,7 @@ export default function OnboardAmbulance() {
           <div>
             <p className="muted" style={{ marginBottom: 14 }}>
               Confirm details. The vehicle stays <strong>Pending</strong> until you approve it from Ambulance fleet.
+              The driver phone ({form.phone || '—'}) can sign in on the mobile app with OTP to manage bookings once linked.
             </p>
             <div className="detail-grid">
               <Meta label="Operator" value={form.operator} />
