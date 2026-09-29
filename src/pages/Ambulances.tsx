@@ -50,7 +50,8 @@ export default function Ambulances() {
   const [tab, setTab] = useState<string>('All')
   const [stateFilter, setStateFilter] = useState('All')
   const [districtFilter, setDistrictFilter] = useState('All')
-  const [selected, setSelected] = useState<AmbulanceVehicle | null>(null)
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const selected = selectedId ? fleet.find((v) => v.id === selectedId) ?? null : null
   const notice = (location.state as OnboardLocationState | null)?.justOnboarded
 
   const filteredFleet = useMemo(() => {
@@ -197,7 +198,7 @@ export default function Ambulances() {
                     <StatusChip label={v.status} />
                   </td>
                   <td>
-                    <button className="btn btn-ghost btn-sm" onClick={() => setSelected(v)}>
+                    <button className="btn btn-ghost btn-sm" onClick={() => setSelectedId(v.id)}>
                       View
                     </button>
                     {v.status === 'Pending' && (
@@ -252,7 +253,7 @@ export default function Ambulances() {
       )}
 
       {selected && (
-        <Modal title={`Vehicle ${selected.vehicle}`} wide onClose={() => setSelected(null)}>
+        <Modal title={`Vehicle ${selected.vehicle}`} wide onClose={() => setSelectedId(null)}>
           <div className="detail-grid">
             <div className="meta">
               <span>Operator</span>
@@ -299,17 +300,28 @@ export default function Ambulances() {
 
           {(selected.vehiclePhotos?.length ?? 0) > 0 ? (
             <div className="vehicle-photo-grid">
-              {selected.vehiclePhotos!.map((photo) => (
+              {selected.vehiclePhotos!.map((photo) => {
+                const src = resolveMediaUrl(photo.fileUrl)
+                return (
                 <div className="vehicle-photo" key={photo.label}>
-                  {photo.fileUrl && resolveMediaUrl(photo.fileUrl) ? (
-                    <img src={resolveMediaUrl(photo.fileUrl)!} alt={photo.label} />
-                  ) : (
-                    <Camera size={28} />
-                  )}
+                  {src ? (
+                    <img
+                      src={src}
+                      alt={photo.label}
+                      referrerPolicy="no-referrer"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none'
+                      }}
+                    />
+                  ) : null}
+                  {!src ? <Camera size={28} /> : null}
                   <span>{photo.label}</span>
-                  {photo.uploadedAt && <small>{photo.uploadedAt}</small>}
+                  {photo.uploadedAt && <small>{new Date(photo.uploadedAt).toLocaleString()}</small>}
+                  {!photo.fileUrl?.trim() ? (
+                    <small style={{ color: '#b42318' }}>No image URL — re-upload from mobile or run seed-media-mocks</small>
+                  ) : null}
                 </div>
-              ))}
+              )})}
             </div>
           ) : (
             <p className="muted">No photos uploaded for this vehicle yet.</p>
@@ -321,7 +333,7 @@ export default function Ambulances() {
                 className="btn btn-primary"
                 onClick={() => {
                   setVehicleStatus(selected.id, 'Active')
-                  setSelected(null)
+                  setSelectedId(null)
                 }}
               >
                 Approve vehicle

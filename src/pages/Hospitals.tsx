@@ -8,6 +8,7 @@ import Modal from '../components/Modal'
 import StatusChip from '../components/StatusChip'
 import { useDirectory } from '../data/directory'
 import type { Hospital, OnboardLocationState } from '../types'
+import { ApiError } from '../api/http'
 import { hasApiBackend } from '../config/api'
 import { matchesLocation } from '../utils/locationFilter'
 
@@ -21,6 +22,7 @@ export default function Hospitals() {
   const [brandingHospital, setBrandingHospital] = useState<Hospital | null>(null)
   const [detailHospital, setDetailHospital] = useState<Hospital | null>(null)
   const [uploading, setUploading] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
   const [tab, setTab] = useState<(typeof TABS)[number]>('All')
   const [stateFilter, setStateFilter] = useState('All')
   const [districtFilter, setDistrictFilter] = useState('All')
@@ -37,20 +39,39 @@ export default function Hospitals() {
   }, [hospitals, query, tab, stateFilter, districtFilter])
 
   async function uploadBranding(kind: 'logo' | 'cover', file: File) {
-    if (!brandingHospital || !hasApiBackend()) return
+    if (!brandingHospital || !hasApiBackend()) {
+      setUploadError('API is not configured — set VITE_API_BASE_URL or use the hosted admin URL.')
+      return
+    }
     setUploading(true)
+    setUploadError(null)
     try {
       const { url } = await adminApi.uploadHospitalImage(brandingHospital.id, kind, file)
+      if (!url?.trim()) {
+        throw new Error('Upload succeeded but no image URL was returned.')
+      }
       const patch =
         kind === 'logo' ? { logoUrl: url } : { coverPhotoUrl: url }
       setHospitals((prev) =>
         prev.map((h) => (h.id === brandingHospital.id ? { ...h, ...patch } : h)),
       )
       setBrandingHospital((cur) => (cur ? { ...cur, ...patch } : cur))
+    } catch (e) {
+      const message =
+        e instanceof ApiError
+          ? e.message
+          : e instanceof Error
+            ? e.message
+            : 'Upload failed. Check you are signed in and the API is reachable.'
+      setUploadError(message)
     } finally {
       setUploading(false)
     }
   }
+
+  const brandingLive = brandingHospital
+    ? hospitals.find((h) => h.id === brandingHospital.id) ?? brandingHospital
+    : null
 
   return (
     <div className="page">
@@ -133,7 +154,10 @@ export default function Hospitals() {
                   <button
                     className="btn btn-ghost btn-sm"
                     type="button"
-                    onClick={() => setBrandingHospital(h)}
+                    onClick={() => {
+                      setUploadError(null)
+                      setBrandingHospital(hospitals.find((x) => x.id === h.id) ?? h)
+                    }}
                   >
                     Branding
                   </button>
@@ -149,22 +173,33 @@ export default function Hospitals() {
         </table>
       </div>
 
-      {brandingHospital && (
-        <Modal title={`Branding — ${brandingHospital.name}`} onClose={() => setBrandingHospital(null)}>
+      {brandingLive && (
+        <Modal
+          title={`Branding — ${brandingLive.name}`}
+          onClose={() => {
+            setBrandingHospital(null)
+            setUploadError(null)
+          }}
+        >
           <p className="muted" style={{ marginBottom: 12 }}>
             Logo and cover appear in the mobile app for this hospital.
           </p>
           {uploading ? <p className="hint">Uploading…</p> : null}
+          {uploadError ? (
+            <p className="hint" style={{ color: '#b42318', marginBottom: 10 }}>{uploadError}</p>
+          ) : null}
           <HospitalImageUpload
+            key={`${brandingLive.id}-logo-${brandingLive.logoUrl ?? 'empty'}`}
             label="Logo"
             kind="logo"
-            previewUrl={brandingHospital.logoUrl}
+            previewUrl={brandingLive.logoUrl}
             onPick={(file) => void uploadBranding('logo', file)}
           />
           <HospitalImageUpload
+            key={`${brandingLive.id}-cover-${brandingLive.coverPhotoUrl ?? 'empty'}`}
             label="Cover photo"
             kind="cover"
-            previewUrl={brandingHospital.coverPhotoUrl}
+            previewUrl={brandingLive.coverPhotoUrl}
             onPick={(file) => void uploadBranding('cover', file)}
           />
         </Modal>

@@ -68,7 +68,10 @@ export default function Specialties() {
       <div className="page-head">
         <div>
           <h3>Specialties</h3>
-          <p>Chips shown on the mobile home “Explore specialties” section</p>
+          <p>
+            Home “Explore specialties” chips and job post / filter department lists on mobile and
+            admin
+          </p>
         </div>
         <button className="btn btn-primary" onClick={() => setOpen(true)}>
           <Plus size={16} />

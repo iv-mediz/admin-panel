@@ -37,12 +37,22 @@ const emptyJob: JobForm = {
   type: 'Full Time',
   category: 'Nursing',
   department: '',
-  availability: 'Day Shift',
+  availability: '',
   description: '',
 }
 
 export default function Jobs() {
-  const { jobs: items, hospitals, states, setJobs, loading, error, refresh } = useDirectory()
+  const { jobs: items, hospitals, states, specialties, setJobs, loading, error, refresh } =
+    useDirectory()
+  const departmentOptions = useMemo(() => {
+    const names = specialties
+      .filter((s) => s.status === 'Active')
+      .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name))
+      .map((s) => s.name)
+    return names.length > 0
+      ? names
+      : ['Nursing', 'Doctors', 'Allied Health', 'Pharmacy', 'Critical Care', 'Cardiology']
+  }, [specialties])
   const partnerHospitals = useMemo(
     () => hospitals.filter((h) => h.status === 'Partner'),
     [hospitals],
@@ -277,7 +287,22 @@ export default function Jobs() {
               />
               <Field label="Salary" value={form.salary} onChange={(v) => setForm({ ...form, salary: v })} />
               <Field label="Experience" value={form.experience} onChange={(v) => setForm({ ...form, experience: v })} />
-              <Field label="Department" value={form.department} onChange={(v) => setForm({ ...form, department: v })} />
+              <div className="field">
+                <label>Department</label>
+                <select
+                  required
+                  value={form.department}
+                  onChange={(e) => setForm({ ...form, department: e.target.value })}
+                >
+                  <option value="">Select department…</option>
+                  {departmentOptions.map((d) => (
+                    <option key={d} value={d}>
+                      {d}
+                    </option>
+                  ))}
+                </select>
+                <span className="hint">Manage options under Locations → Specialties</span>
+              </div>
               <div className="field">
                 <label>Job type</label>
                 <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value as JobType })}>
@@ -295,6 +320,13 @@ export default function Jobs() {
                   <option>Pharmacy</option>
                 </select>
               </div>
+              <Field
+                label="Working hours"
+                value={form.availability}
+                onChange={(v) => setForm({ ...form, availability: v })}
+                placeholder="9 am to 7 pm"
+                hint="Use a time range like 9 am to 7 pm"
+              />
               <div className="field full">
                 <label>Description</label>
                 <textarea rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} required />
@@ -310,7 +342,8 @@ export default function Jobs() {
                   saving ||
                   partnerHospitals.length === 0 ||
                   !form.hospitalId ||
-                  !form.cityDistrict.trim()
+                  !form.cityDistrict.trim() ||
+                  !form.availability.trim()
                 }
               >
                 {saving ? 'Publishing…' : 'Publish job'}
@@ -338,6 +371,12 @@ export default function Jobs() {
               <span>Job type</span>
               <strong>{selected.type}</strong>
             </div>
+            {selected.availability ? (
+              <div className="meta">
+                <span>Working hours</span>
+                <strong>{selected.availability}</strong>
+              </div>
+            ) : null}
           </div>
           <p style={{ color: 'var(--text-secondary)', marginBottom: 14 }}>{selected.description}</p>
           <h4 style={{ marginBottom: 8 }}>Key responsibilities</h4>
@@ -357,16 +396,23 @@ function Field({
   value,
   onChange,
   hint,
+  placeholder,
 }: {
   label: string
   value: string
   onChange: (value: string) => void
   hint?: string
+  placeholder?: string
 }) {
   return (
     <div className="field">
       <label>{label}</label>
-      <input value={value} onChange={(e) => onChange(e.target.value)} required />
+      <input
+        value={value}
+        placeholder={placeholder}
+        onChange={(e) => onChange(e.target.value)}
+        required
+      />
       {hint ? <span className="hint">{hint}</span> : null}
     </div>
   )
