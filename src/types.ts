@@ -87,6 +87,8 @@ export interface Hospital {
   rating: number
   contact: string
   status: HospitalStatus
+  /** Visible on mobile when partner is approved; defaults to true. */
+  isActive?: boolean
   type?: string
   contactPerson?: string
   email?: string
@@ -113,6 +115,7 @@ export interface AmbulanceVehicle {
   state: string
   base: string
   status: VehicleStatus
+  isActive?: boolean
   vehiclePhotos?: VehiclePhoto[]
   email?: string
   subscriptionPlan?: SubscriptionPlanName

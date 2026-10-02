@@ -2,9 +2,9 @@ import { MapPinned, Plus, Search } from 'lucide-react'
 import { useMemo, useState, type FormEvent } from 'react'
 import LocationFilters from '../components/LocationFilters'
 import Modal from '../components/Modal'
+import ActiveToggle from '../components/ActiveToggle'
 import StatusChip from '../components/StatusChip'
 import { useDirectory } from '../data/directory'
-import type { FranchiseStatus } from '../types'
 
 const TABS = ['All', 'Active', 'Pending', 'Suspended'] as const
 
@@ -172,22 +172,22 @@ export default function Franchises() {
                 </td>
                 <td>{f.commission}</td>
                 <td>
-                  <StatusChip label={f.status} />
+                  {f.status === 'Pending' ? (
+                    <StatusChip label={f.status} />
+                  ) : (
+                    <ActiveToggle
+                      active={f.status === 'Active'}
+                      ariaLabel={`${f.name} franchise`}
+                      onChange={(on) =>
+                        setFranchiseStatus(f.id, on ? 'Active' : 'Suspended')
+                      }
+                    />
+                  )}
                 </td>
                 <td>
                   {f.status === 'Pending' && (
                     <button className="btn btn-ghost btn-sm" onClick={() => setFranchiseStatus(f.id, 'Active')}>
                       Approve
-                    </button>
-                  )}
-                  {f.status === 'Active' && (
-                    <button className="btn btn-ghost btn-sm" onClick={() => setFranchiseStatus(f.id, 'Suspended' as FranchiseStatus)}>
-                      Suspend
-                    </button>
-                  )}
-                  {f.status === 'Suspended' && (
-                    <button className="btn btn-ghost btn-sm" onClick={() => setFranchiseStatus(f.id, 'Active')}>
-                      Reactivate
                     </button>
                   )}
                 </td>

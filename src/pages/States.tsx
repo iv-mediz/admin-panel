@@ -3,9 +3,8 @@ import { useMemo, useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import LocationFilters from '../components/LocationFilters'
 import Modal from '../components/Modal'
-import StatusChip from '../components/StatusChip'
+import ActiveToggle from '../components/ActiveToggle'
 import { useDirectory } from '../data/directory'
-import type { LocationStatus } from '../types'
 
 const TABS = ['All', 'Active', 'Pending', 'Paused'] as const
 
@@ -125,22 +124,16 @@ export default function States() {
                 <td>{cities.filter((c) => c.stateId === s.id).length}</td>
                 <td>{hospitals.filter((h) => h.state === s.name).length}</td>
                 <td>
-                  <StatusChip label={s.status} />
+                  <ActiveToggle
+                    active={s.status === 'Active'}
+                    ariaLabel={`${s.name} state`}
+                    onChange={(on) => setStateStatus(s.id, on ? 'Active' : 'Paused')}
+                  />
                 </td>
                 <td className="row-actions">
                   <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/cities?state=${s.id}`)}>
                     Cities / districts
                   </button>
-                  {s.status !== 'Active' && (
-                    <button className="btn btn-ghost btn-sm" onClick={() => setStateStatus(s.id, 'Active')}>
-                      Activate
-                    </button>
-                  )}
-                  {s.status === 'Active' && (
-                    <button className="btn btn-ghost btn-sm" onClick={() => setStateStatus(s.id, 'Paused' as LocationStatus)}>
-                      Pause
-                    </button>
-                  )}
                 </td>
               </tr>
             ))}

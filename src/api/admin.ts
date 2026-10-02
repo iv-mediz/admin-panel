@@ -188,6 +188,13 @@ export async function deleteProfessional(id: string) {
   return apiRequest<{ success: boolean }>(`professionals/${id}`, { method: 'DELETE' })
 }
 
+export async function updateProfessional(id: string, body: Partial<Professional>) {
+  return apiRequest<Professional>(`professionals/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(body),
+  })
+}
+
 export async function fetchStates() {
   return apiRequest<AppState[]>('locations/states')
 }

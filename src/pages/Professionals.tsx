@@ -2,6 +2,7 @@ import { Plus, Search, Trash2 } from 'lucide-react'
 import { useMemo, useState, type FormEvent } from 'react'
 import LocationFilters from '../components/LocationFilters'
 import Modal from '../components/Modal'
+import ActiveToggle from '../components/ActiveToggle'
 import StatusChip from '../components/StatusChip'
 import { useDirectory } from '../data/directory'
 import type { JobType, Professional } from '../types'
@@ -46,7 +47,8 @@ const emptyForm: UserForm = {
 }
 
 export default function Professionals() {
-  const { professionals, states, cities, addProfessional, removeProfessional } = useDirectory()
+  const { professionals, states, cities, addProfessional, removeProfessional, setProfessionalStatus } =
+    useDirectory()
   const [query, setQuery] = useState('')
   const [role, setRole] = useState<(typeof ROLES)[number]>('All')
   const [employment, setEmployment] = useState<(typeof EMPLOYMENT)[number]>('All')
@@ -207,7 +209,11 @@ export default function Professionals() {
                   )}
                 </td>
                 <td>
-                  <StatusChip label={user.status} />
+                  <ActiveToggle
+                    active={user.status === 'Active'}
+                    ariaLabel={`${user.name} profile`}
+                    onChange={(on) => setProfessionalStatus(user.id, on ? 'Active' : 'Pending')}
+                  />
                 </td>
                 <td>
                   <div style={{ display: 'flex', gap: 6 }}>

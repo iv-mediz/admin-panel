@@ -3,7 +3,7 @@ import { useMemo, useState, type FormEvent } from 'react'
 import CityDistrictSelect, { cityDistrictPayload } from '../components/CityDistrictSelect'
 import LocationFilters from '../components/LocationFilters'
 import Modal from '../components/Modal'
-import StatusChip from '../components/StatusChip'
+import ActiveToggle from '../components/ActiveToggle'
 import { useDirectory } from '../data/directory'
 import type { TeamMember, TeamRole } from '../types'
 import { matchesLocation } from '../utils/locationFilter'
@@ -130,7 +130,7 @@ export default function Team() {
               <th>Role</th>
               <th>City</th>
               <th>Joined</th>
-              <th>Status</th>
+              <th>Active</th>
               <th />
             </tr>
           </thead>
@@ -150,17 +150,16 @@ export default function Team() {
                 <td>{m.city}</td>
                 <td>{m.joined}</td>
                 <td>
-                  <StatusChip label={m.status} />
+                  <ActiveToggle
+                    active={m.status === 'Active'}
+                    ariaLabel={`${m.name} team access`}
+                    onChange={(on) => setMemberStatus(m.id, on ? 'Active' : 'Invited')}
+                  />
                 </td>
                 <td className="row-actions">
                   <button className="btn btn-ghost btn-sm" onClick={() => setSelected(m)}>
                     View
                   </button>
-                  {m.status === 'Invited' && (
-                    <button className="btn btn-ghost btn-sm" onClick={() => setMemberStatus(m.id, 'Active')}>
-                      Activate
-                    </button>
-                  )}
                 </td>
               </tr>
             ))}

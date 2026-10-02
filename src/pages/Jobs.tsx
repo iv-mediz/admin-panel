@@ -3,6 +3,7 @@ import { useMemo, useState, type FormEvent } from 'react'
 import CityDistrictSelect from '../components/CityDistrictSelect'
 import LocationFilters from '../components/LocationFilters'
 import Modal from '../components/Modal'
+import ActiveToggle from '../components/ActiveToggle'
 import StatusChip from '../components/StatusChip'
 import * as adminApi from '../api/admin'
 import { hasApiBackend } from '../config/api'
@@ -42,7 +43,7 @@ const emptyJob: JobForm = {
 }
 
 export default function Jobs() {
-  const { jobs: items, hospitals, states, specialties, setJobs, loading, error, refresh } =
+  const { jobs: items, hospitals, states, specialties, setJobs, setJobStatus, loading, error, refresh } =
     useDirectory()
   const departmentOptions = useMemo(() => {
     const names = specialties
@@ -54,7 +55,7 @@ export default function Jobs() {
       : ['Nursing', 'Doctors', 'Allied Health', 'Pharmacy', 'Critical Care', 'Cardiology']
   }, [specialties])
   const partnerHospitals = useMemo(
-    () => hospitals.filter((h) => h.status === 'Partner'),
+    () => hospitals.filter((h) => h.status === 'Partner' && h.isActive !== false),
     [hospitals],
   )
   const [query, setQuery] = useState('')
@@ -196,7 +197,7 @@ export default function Jobs() {
               <th>Type</th>
               <th>Salary</th>
               <th>Applicants</th>
-              <th>Status</th>
+              <th>Listing</th>
               <th />
             </tr>
           </thead>
@@ -219,7 +220,12 @@ export default function Jobs() {
                 <td style={{ fontWeight: 700 }}>{job.salary}</td>
                 <td>{job.applicants}</td>
                 <td>
-                  <StatusChip label={job.status} />
+                  <ActiveToggle
+                    active={job.status === 'Active'}
+                    disabled={job.status === 'Closed'}
+                    ariaLabel={`${job.title} job listing`}
+                    onChange={(on) => setJobStatus(job.id, on ? 'Active' : 'Paused')}
+                  />
                 </td>
                 <td>
                   <button className="btn btn-ghost btn-sm" onClick={() => setSelected(job)}>

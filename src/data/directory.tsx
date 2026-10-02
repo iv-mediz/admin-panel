@@ -76,7 +76,11 @@ interface DirectoryContextValue {
   addProfessional: (professional: Professional) => void
   removeProfessional: (id: string) => void
   setHospitalStatus: (id: string, status: HospitalStatus) => void
+  setHospitalActive: (id: string, isActive: boolean) => void
   setVehicleStatus: (id: string, status: VehicleStatus) => void
+  setVehicleActive: (id: string, isActive: boolean) => void
+  setJobStatus: (id: string, status: Job['status']) => void
+  setProfessionalStatus: (id: string, status: Professional['status']) => void
   setMemberStatus: (id: string, status: TeamStatus) => void
   setStateStatus: (id: string, status: LocationStatus) => void
   setCityStatus: (id: string, status: LocationStatus) => void
@@ -378,10 +382,34 @@ export function DirectoryProvider({ children }: { children: ReactNode }) {
           void adminApi.updateHospital(id, { status })
         }
       },
+      setHospitalActive: (id, isActive) => {
+        setHospitals((prev) => prev.map((h) => (h.id === id ? { ...h, isActive } : h)))
+        if (hasApiBackend()) {
+          void adminApi.updateHospital(id, { isActive })
+        }
+      },
       setVehicleStatus: (id, status) => {
         setFleet((prev) => prev.map((v) => (v.id === id ? { ...v, status } : v)))
         if (hasApiBackend()) {
           void adminApi.updateFleetVehicle(id, { status })
+        }
+      },
+      setVehicleActive: (id, isActive) => {
+        setFleet((prev) => prev.map((v) => (v.id === id ? { ...v, isActive } : v)))
+        if (hasApiBackend()) {
+          void adminApi.updateFleetVehicle(id, { isActive })
+        }
+      },
+      setJobStatus: (id, status) => {
+        setJobs((prev) => prev.map((j) => (j.id === id ? { ...j, status } : j)))
+        if (hasApiBackend()) {
+          void adminApi.updateJob(id, { status })
+        }
+      },
+      setProfessionalStatus: (id, status) => {
+        setProfessionals((prev) => prev.map((p) => (p.id === id ? { ...p, status } : p)))
+        if (hasApiBackend()) {
+          void adminApi.updateProfessional(id, { status })
         }
       },
       setMemberStatus: (id, status) => {

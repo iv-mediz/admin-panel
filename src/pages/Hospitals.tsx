@@ -5,6 +5,7 @@ import * as adminApi from '../api/admin'
 import HospitalImageUpload, { resolveMediaUrl } from '../components/HospitalImageUpload'
 import LocationFilters from '../components/LocationFilters'
 import Modal from '../components/Modal'
+import ActiveToggle from '../components/ActiveToggle'
 import StatusChip from '../components/StatusChip'
 import { useDirectory } from '../data/directory'
 import type { Hospital, OnboardLocationState } from '../types'
@@ -17,7 +18,7 @@ const TABS = ['All', 'Partner', 'Pending'] as const
 export default function Hospitals() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { hospitals, setHospitalStatus, setHospitals } = useDirectory()
+  const { hospitals, setHospitalStatus, setHospitalActive, setHospitals } = useDirectory()
   const [query, setQuery] = useState('')
   const [brandingHospital, setBrandingHospital] = useState<Hospital | null>(null)
   const [detailHospital, setDetailHospital] = useState<Hospital | null>(null)
@@ -117,13 +118,14 @@ export default function Hospitals() {
               <th>Contact</th>
               <th>Applied</th>
               <th>Status</th>
+              <th>On app</th>
               <th />
             </tr>
           </thead>
           <tbody>
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={6} style={{ textAlign: 'center', padding: '32px 16px', color: '#667085' }}>
+                <td colSpan={7} style={{ textAlign: 'center', padding: '32px 16px', color: '#667085' }}>
                   No hospitals yet. Use &quot;Onboard hospital&quot; to add your first partner.
                 </td>
               </tr>
@@ -146,6 +148,14 @@ export default function Hospitals() {
                 <td>{formatApplied(h.createdAt)}</td>
                 <td>
                   <StatusChip label={h.status} />
+                </td>
+                <td>
+                  <ActiveToggle
+                    active={h.isActive !== false}
+                    disabled={h.status !== 'Partner'}
+                    ariaLabel={`${h.name} visibility on mobile app`}
+                    onChange={(on) => setHospitalActive(h.id, on)}
+                  />
                 </td>
                 <td>
                   <button className="btn btn-ghost btn-sm" type="button" onClick={() => setDetailHospital(h)}>

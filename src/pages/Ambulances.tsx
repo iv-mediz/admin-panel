@@ -4,6 +4,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import LocationFilters from '../components/LocationFilters'
 import { resolveMediaUrl } from '../components/HospitalImageUpload'
 import Modal from '../components/Modal'
+import ActiveToggle from '../components/ActiveToggle'
 import StatusChip from '../components/StatusChip'
 import { useDirectory } from '../data/directory'
 import type { AmbulanceService, AmbulanceServiceTypeConfig, OnboardLocationState } from '../types'
@@ -22,6 +23,7 @@ export default function Ambulances() {
     ambulanceServiceTypes,
     updateAmbulanceServiceType,
     setVehicleStatus,
+    setVehicleActive,
     loading,
     error,
   } = useDirectory()
@@ -261,6 +263,7 @@ export default function Ambulances() {
                 <th>Applied</th>
                 <th>Photos</th>
                 <th>Status</th>
+                <th>On app</th>
                 <th />
               </tr>
             </thead>
@@ -290,6 +293,14 @@ export default function Ambulances() {
                   </td>
                   <td>
                     <StatusChip label={v.status} />
+                  </td>
+                  <td>
+                    <ActiveToggle
+                      active={v.isActive !== false}
+                      disabled={v.status !== 'Active'}
+                      ariaLabel={`${v.vehicle} visibility on app`}
+                      onChange={(on) => setVehicleActive(v.id, on)}
+                    />
                   </td>
                   <td>
                     <button className="btn btn-ghost btn-sm" onClick={() => setSelectedId(v.id)}>

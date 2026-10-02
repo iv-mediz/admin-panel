@@ -3,9 +3,8 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import LocationFilters from '../components/LocationFilters'
 import Modal from '../components/Modal'
-import StatusChip from '../components/StatusChip'
+import ActiveToggle from '../components/ActiveToggle'
 import { useDirectory } from '../data/directory'
-import type { LocationStatus } from '../types'
 import { matchesLocation } from '../utils/locationFilter'
 
 const TABS = ['All', 'Active', 'Pending', 'Paused'] as const
@@ -101,20 +100,13 @@ export default function Cities() {
                 <td>{c.stateName}</td>
                 <td>{hospitals.filter((h) => h.city === c.name).length}</td>
                 <td>
-                  <StatusChip label={c.status} />
+                  <ActiveToggle
+                    active={c.status === 'Active'}
+                    ariaLabel={`${c.name} city`}
+                    onChange={(on) => setCityStatus(c.id, on ? 'Active' : 'Paused')}
+                  />
                 </td>
-                <td className="row-actions">
-                  {c.status !== 'Active' && (
-                    <button className="btn btn-ghost btn-sm" onClick={() => setCityStatus(c.id, 'Active')}>
-                      Activate
-                    </button>
-                  )}
-                  {c.status === 'Active' && (
-                    <button className="btn btn-ghost btn-sm" onClick={() => setCityStatus(c.id, 'Paused' as LocationStatus)}>
-                      Pause
-                    </button>
-                  )}
-                </td>
+                <td className="row-actions" />
               </tr>
             ))}
           </tbody>

@@ -1,9 +1,9 @@
 import { Plus, Search, Trash2 } from 'lucide-react'
 import { useMemo, useState, type FormEvent } from 'react'
 import Modal from '../components/Modal'
-import StatusChip from '../components/StatusChip'
+import ActiveToggle from '../components/ActiveToggle'
 import { useDirectory } from '../data/directory'
-import type { JobCategory, LocationStatus } from '../types'
+import type { JobCategory } from '../types'
 
 const TABS = ['All', 'Active', 'Paused'] as const
 const CATEGORIES: JobCategory[] = ['Nursing', 'Doctors', 'Allied Health', 'Pharmacy']
@@ -130,25 +130,13 @@ export default function Specialties() {
                 <td>{s.query || '—'}</td>
                 <td>{s.sortOrder}</td>
                 <td>
-                  <StatusChip label={s.status} />
+                  <ActiveToggle
+                    active={s.status === 'Active'}
+                    ariaLabel={`${s.name} on home screen`}
+                    onChange={(on) => setSpecialtyStatus(s.id, on ? 'Active' : 'Paused')}
+                  />
                 </td>
                 <td className="row-actions">
-                  {s.status !== 'Active' && (
-                    <button
-                      className="btn btn-ghost btn-sm"
-                      onClick={() => setSpecialtyStatus(s.id, 'Active')}
-                    >
-                      Activate
-                    </button>
-                  )}
-                  {s.status === 'Active' && (
-                    <button
-                      className="btn btn-ghost btn-sm"
-                      onClick={() => setSpecialtyStatus(s.id, 'Paused' as LocationStatus)}
-                    >
-                      Hide on app
-                    </button>
-                  )}
                   <button
                     className="btn btn-ghost btn-sm"
                     onClick={() => {
