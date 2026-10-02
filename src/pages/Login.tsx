@@ -1,5 +1,5 @@
 import { useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { sendAdminOtp, verifyAdminOtp } from '../api/auth'
 import { ApiError } from '../api/http'
 import { getApiBaseUrl, hasApiBackend, isDevBackend } from '../config/api'
@@ -10,6 +10,8 @@ const ADMIN_EMAIL_DEFAULT = 'admin@ivmediz.com'
 
 export default function Login() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const sessionExpired = searchParams.get('reason') === 'session'
   const [email, setEmail] = useState(ADMIN_EMAIL_DEFAULT)
   const [otp, setOtp] = useState(['', '', '', '', '', ''])
   const [step, setStep] = useState<'email' | 'otp'>('email')
@@ -106,6 +108,11 @@ export default function Login() {
           <form className="login-box" onSubmit={sendOtp}>
             <h3>Welcome back</h3>
             <p>Sign in to the iv mediz admin panel with email OTP</p>
+            {sessionExpired ? (
+              <p className="hint" style={{ color: '#b45309', marginBottom: 8 }}>
+                Your session expired or is no longer valid. Sign in again with OTP.
+              </p>
+            ) : null}
             <p className="hint" style={{ marginBottom: 12 }}>
               API: <code>{getApiBaseUrl()}</code>
             </p>

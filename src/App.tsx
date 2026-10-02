@@ -1,7 +1,11 @@
 import type { ReactNode } from 'react'
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Navigate, Route, Routes, useNavigate } from 'react-router-dom'
+import { fetchDashboardStats } from './api/admin'
+import { ApiError } from './api/http'
 import Layout from './components/Layout'
 import { DirectoryProvider } from './data/directory'
+import { hasApiBackend } from './config/api'
 import Ambulances from './pages/Ambulances'
 import Applications from './pages/Applications'
 import Dashboard from './pages/Dashboard'
@@ -20,10 +24,39 @@ import Franchises from './pages/Franchises'
 import CreatePlan from './pages/CreatePlan'
 import Subscriptions from './pages/Subscriptions'
 import Team from './pages/Team'
-import { isAuthenticated } from './auth/session'
+import { clearSession, isAuthenticated } from './auth/session'
 
 function Protected({ children }: { children: ReactNode }) {
-  if (!isAuthenticated()) return <Navigate to="/login" replace />
+  const navigate = useNavigate()
+  const [sessionOk, setSessionOk] = useState(false)
+
+  useEffect(() => {
+    if (!isAuthenticated()) {
+      navigate('/login', { replace: true })
+      return
+    }
+    if (!hasApiBackend()) {
+      setSessionOk(true)
+      return
+    }
+    void fetchDashboardStats()
+      .then(() => setSessionOk(true))
+      .catch((err: unknown) => {
+        if (err instanceof ApiError && err.status === 401) {
+          clearSession()
+        }
+        navigate('/login', { replace: true, state: { reason: 'session' } })
+      })
+  }, [navigate])
+
+  if (!sessionOk) {
+    return (
+      <div className="login" style={{ minHeight: '100vh', placeContent: 'center' }}>
+        <p className="hint">Checking your session…</p>
+      </div>
+    )
+  }
+
   return children
 }
 

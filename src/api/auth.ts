@@ -20,6 +20,7 @@ export type SendOtpResponse = {
 export async function sendAdminOtp(email: string): Promise<SendOtpResponse> {
   return apiRequest<SendOtpResponse>('auth/admin/otp/send', {
     method: 'POST',
+    auth: false,
     body: JSON.stringify({ email }),
   })
 }
@@ -30,6 +31,7 @@ export async function verifyAdminOtp(
 ): Promise<AdminLoginResponse> {
   return apiRequest<AdminLoginResponse>('auth/admin/otp/verify', {
     method: 'POST',
+    auth: false,
     body: JSON.stringify({ email, otp }),
   })
 }
@@ -37,6 +39,7 @@ export async function verifyAdminOtp(
 export async function adminLogin(email: string, password: string): Promise<AdminLoginResponse> {
   return apiRequest<AdminLoginResponse>('auth/admin/login', {
     method: 'POST',
+    auth: false,
     body: JSON.stringify({ email, password }),
   })
 }

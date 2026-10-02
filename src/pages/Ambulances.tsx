@@ -6,7 +6,7 @@ import { resolveMediaUrl } from '../components/HospitalImageUpload'
 import Modal from '../components/Modal'
 import StatusChip from '../components/StatusChip'
 import { useDirectory } from '../data/directory'
-import type { AmbulanceService, AmbulanceVehicle, OnboardLocationState } from '../types'
+import type { AmbulanceService, AmbulanceServiceTypeConfig, OnboardLocationState } from '../types'
 import { matchesLocation } from '../utils/locationFilter'
 
 const BOOKING_TABS = ['All', 'On the way', 'Assigned', 'Completed', 'Cancelled'] as const
@@ -16,35 +16,56 @@ const ICONS: Record<AmbulanceService['id'], LucideIcon> = { bls: Ambulance, als:
 export default function Ambulances() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { fleet, bookings, setVehicleStatus, loading, error } = useDirectory()
+  const {
+    fleet,
+    bookings,
+    ambulanceServiceTypes,
+    updateAmbulanceServiceType,
+    setVehicleStatus,
+    loading,
+    error,
+  } = useDirectory()
+  const [pricingEdit, setPricingEdit] = useState<AmbulanceServiceTypeConfig | null>(null)
+  const [pricingForm, setPricingForm] = useState({ basePrice: 0, farePerKm: 0 })
+  const [pricingSaving, setPricingSaving] = useState(false)
 
   const services = useMemo((): AmbulanceService[] => {
     const count = (match: (s: string) => boolean) =>
       bookings.filter((b) => match(b.serviceType.toLowerCase())).length
-    return [
-      {
-        id: 'bls',
-        title: 'Basic Life Support',
-        subtitle: 'Oxygen, first aid & trained EMT for stable patients',
-        bookings: count((s) => s.includes('basic')),
-        fareFrom: '₹980',
-      },
-      {
-        id: 'als',
-        title: 'Advanced Life Support',
-        subtitle: 'ICU setup, defibrillator & critical care paramedic',
-        bookings: count((s) => s.includes('advanced')),
-        fareFrom: '₹2,180',
-      },
-      {
-        id: 'neo',
-        title: 'Neonatal transport',
-        subtitle: 'Incubator & NICU-trained crew for newborns',
-        bookings: count((s) => s.includes('neonatal') || s.includes('neo')),
-        fareFrom: '₹2,480',
-      },
-    ]
-  }, [bookings])
+    const types =
+      ambulanceServiceTypes.length > 0
+        ? ambulanceServiceTypes
+        : [
+            {
+              id: 'bls',
+              title: 'Basic Life Support',
+              subtitle: 'Oxygen, first aid & trained EMT for stable patients',
+              basePrice: 499,
+              farePerKm: 38,
+            },
+            {
+              id: 'als',
+              title: 'Advanced Life Support',
+              subtitle: 'ICU setup, defibrillator & critical care paramedic',
+              basePrice: 899,
+              farePerKm: 58,
+            },
+            {
+              id: 'neo',
+              title: 'Neonatal Ambulance',
+              subtitle: 'Incubator & neonatal specialist for infants',
+              basePrice: 1099,
+              farePerKm: 65,
+            },
+          ]
+    return types.map((t) => ({
+      id: t.id as AmbulanceService['id'],
+      title: t.title,
+      subtitle: t.subtitle,
+      bookings: count((s) => s.includes(t.title.toLowerCase().split(' ')[0])),
+      fareFrom: `₹${t.basePrice} + ₹${t.farePerKm}/km`,
+    }))
+  }, [bookings, ambulanceServiceTypes])
   const [view, setView] = useState<'Fleet' | 'Bookings'>('Fleet')
   const [query, setQuery] = useState('')
   const [tab, setTab] = useState<string>('All')
@@ -111,25 +132,98 @@ export default function Ambulances() {
       </div>
 
       {view === 'Fleet' && (
-        <div className="stats" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
-          {services.map((s) => {
-            const Icon = ICONS[s.id]
-            const count = fleet.filter((v) => v.serviceType === s.title && v.status === 'Active').length
-            return (
-              <article className="service-card" key={s.id}>
-                <div className="icon-box" style={{ background: 'var(--primary-soft)', color: 'var(--primary)', marginBottom: 10 }}>
-                  <Icon size={18} />
-                </div>
-                <h5>{s.title}</h5>
-                <p className="muted" style={{ margin: '6px 0 10px' }}>
-                  {s.subtitle}
-                </p>
-                <strong style={{ color: 'var(--primary)' }}>{count} active vehicles</strong>
-              </article>
-            )
-          })}
-        </div>
+        <>
+          <div className="stats" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
+            {services.map((s) => {
+              const Icon = ICONS[s.id]
+              const count = fleet.filter((v) => v.serviceType === s.title && v.status === 'Active').length
+              const pricing = ambulanceServiceTypes.find((t) => t.id === s.id)
+              return (
+                <article className="service-card" key={s.id}>
+                  <div className="icon-box" style={{ background: 'var(--primary-soft)', color: 'var(--primary)', marginBottom: 10 }}>
+                    <Icon size={18} />
+                  </div>
+                  <h5>{s.title}</h5>
+                  <p className="muted" style={{ margin: '6px 0 10px' }}>
+                    {s.subtitle}
+                  </p>
+                  <p className="muted" style={{ margin: '0 0 8px', fontSize: 13 }}>
+                    {s.fareFrom}
+                  </p>
+                  <strong style={{ color: 'var(--primary)' }}>{count} active vehicles</strong>
+                  {pricing ? (
+                    <button
+                      type="button"
+                      className="btn"
+                      style={{ marginTop: 10, width: '100%' }}
+                      onClick={() => {
+                        setPricingEdit(pricing)
+                        setPricingForm({
+                          basePrice: pricing.basePrice,
+                          farePerKm: pricing.farePerKm,
+                        })
+                      }}
+                    >
+                      Edit pricing
+                    </button>
+                  ) : null}
+                </article>
+              )
+            })}
+          </div>
+          <p className="hint" style={{ marginTop: 8, marginBottom: 14 }}>
+            Mobile app fare = base price + (distance km × fare per km) for the selected service type.
+          </p>
+        </>
       )}
+
+      {pricingEdit ? (
+        <Modal
+          title={`Pricing — ${pricingEdit.title}`}
+          onClose={() => setPricingEdit(null)}
+        >
+          <form
+            onSubmit={(e) => {
+              e.preventDefault()
+              setPricingSaving(true)
+              void updateAmbulanceServiceType(pricingEdit.id, {
+                basePrice: pricingForm.basePrice,
+                farePerKm: pricingForm.farePerKm,
+              })
+                .then(() => setPricingEdit(null))
+                .finally(() => setPricingSaving(false))
+            }}
+          >
+            <div className="field">
+              <label>Base price (₹)</label>
+              <input
+                type="number"
+                min={0}
+                value={pricingForm.basePrice}
+                onChange={(ev) =>
+                  setPricingForm((f) => ({ ...f, basePrice: Number(ev.target.value) }))
+                }
+                required
+              />
+            </div>
+            <div className="field">
+              <label>Fare per km (₹)</label>
+              <input
+                type="number"
+                min={0}
+                value={pricingForm.farePerKm}
+                onChange={(ev) =>
+                  setPricingForm((f) => ({ ...f, farePerKm: Number(ev.target.value) }))
+                }
+                required
+              />
+            </div>
+            <button className="btn btn-primary" type="submit" disabled={pricingSaving}>
+              {pricingSaving ? 'Saving…' : 'Save pricing'}
+            </button>
+          </form>
+        </Modal>
+      ) : null}
 
       <div className="toolbar">
         <div className="search">

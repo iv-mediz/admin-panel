@@ -13,6 +13,7 @@ import type {
   SubscriptionPlan,
   TeamMember,
   Specialty,
+  AmbulanceServiceTypeConfig,
 } from '../types'
 import { apiUrl, hasApiBackend } from '../config/api'
 import { getAccessToken } from '../auth/session'
@@ -141,6 +142,20 @@ export async function uploadHospitalImage(
     throw new ApiError(message, response.status)
   }
   return data as { url: string }
+}
+
+export async function fetchAmbulanceServiceTypes() {
+  return apiRequest<AmbulanceServiceTypeConfig[]>('ambulance-services')
+}
+
+export async function updateAmbulanceServiceType(
+  id: string,
+  body: Partial<AmbulanceServiceTypeConfig>,
+) {
+  return apiRequest<AmbulanceServiceTypeConfig>(`ambulance-services/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(body),
+  })
 }
 
 export async function fetchFleet(query: LocationQuery & { status?: string } = {}) {

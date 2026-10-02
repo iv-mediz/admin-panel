@@ -1,4 +1,5 @@
 import { apiUrl, hasApiBackend } from '../config/api'
+import { handleUnauthorizedApi } from '../auth/unauthorized'
 import { getAccessToken } from '../auth/session'
 
 export class ApiError extends Error {
@@ -10,26 +11,34 @@ export class ApiError extends Error {
   }
 }
 
+export type ApiRequestOptions = RequestInit & {
+  /** When false, do not attach a stored JWT (login / OTP). */
+  auth?: boolean
+}
+
 export async function apiRequest<T>(
   path: string,
-  options: RequestInit = {},
+  options: ApiRequestOptions = {},
 ): Promise<T> {
+  const { auth = true, ...fetchOptions } = options
   if (!hasApiBackend()) {
     throw new ApiError('VITE_API_BASE_URL is not configured', 0)
   }
 
-  const headers = new Headers(options.headers)
-  if (!headers.has('Content-Type') && options.body) {
+  const headers = new Headers(fetchOptions.headers)
+  if (!headers.has('Content-Type') && fetchOptions.body) {
     headers.set('Content-Type', 'application/json')
   }
   headers.set('Accept', 'application/json')
 
-  const token = getAccessToken()
-  if (token) {
-    headers.set('Authorization', `Bearer ${token}`)
+  if (auth) {
+    const token = getAccessToken()
+    if (token) {
+      headers.set('Authorization', `Bearer ${token}`)
+    }
   }
 
-  const response = await fetch(apiUrl(path), { ...options, headers })
+  const response = await fetch(apiUrl(path), { ...fetchOptions, headers })
 
   let data: unknown = null
   const text = await response.text()
@@ -52,6 +61,9 @@ export async function apiRequest<T>(
           ? (data as { message: string[] }).message.join(', ')
           : String((data as { message: string }).message)
         : `Request failed (${response.status})`
+    if (response.status === 401 && auth) {
+      handleUnauthorizedApi()
+    }
     throw new ApiError(message, response.status)
   }
 

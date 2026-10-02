@@ -34,6 +34,7 @@ import type {
   VehicleStatus,
   ApplicationStatus,
   Specialty,
+  AmbulanceServiceTypeConfig,
 } from '../types'
 
 interface DirectoryContextValue {
@@ -47,6 +48,11 @@ interface DirectoryContextValue {
   hospitals: Hospital[]
   setHospitals: React.Dispatch<React.SetStateAction<Hospital[]>>
   fleet: AmbulanceVehicle[]
+  ambulanceServiceTypes: AmbulanceServiceTypeConfig[]
+  updateAmbulanceServiceType: (
+    id: string,
+    patch: Partial<AmbulanceServiceTypeConfig>,
+  ) => Promise<void>
   team: TeamMember[]
   states: AppState[]
   cities: City[]
@@ -92,54 +98,99 @@ interface DirectoryContextValue {
 
 const DirectoryContext = createContext<DirectoryContextValue | null>(null)
 
-async function loadAllData() {
-  const [
-    jobs,
-    applications,
-    bookings,
-    hospitals,
-    fleet,
-    team,
-    states,
-    cities,
-    specialties,
-    professionals,
-    subscriptionPlans,
-    userSubscriptions,
-    franchises,
-    notifications,
-  ] = await Promise.all([
-    adminApi.fetchJobs(),
-    adminApi.fetchApplications(),
-    adminApi.fetchBookings(),
-    adminApi.fetchHospitals(),
-    adminApi.fetchFleet(),
-    adminApi.fetchTeam(),
-    adminApi.fetchStates(),
-    adminApi.fetchCities(),
-    adminApi.fetchSpecialties(),
-    adminApi.fetchProfessionals(),
-    adminApi.fetchSubscriptionPlans(),
-    adminApi.fetchSubscriptions(),
-    adminApi.fetchFranchises(),
-    adminApi.fetchNotifications(),
-  ])
-  return {
-    jobs,
-    applications,
-    bookings,
-    hospitals,
-    fleet,
-    team,
-    states,
-    cities,
-    specialties,
-    professionals,
-    subscriptionPlans,
-    userSubscriptions,
-    franchises,
-    notifications,
+async function loadAllData(): Promise<{
+  jobs: Job[]
+  applications: Application[]
+  bookings: Booking[]
+  hospitals: Hospital[]
+  fleet: AmbulanceVehicle[]
+  ambulanceServiceTypes: AmbulanceServiceTypeConfig[]
+  team: TeamMember[]
+  states: AppState[]
+  cities: City[]
+  specialties: Specialty[]
+  professionals: Professional[]
+  subscriptionPlans: SubscriptionPlan[]
+  userSubscriptions: EntitySubscription[]
+  franchises: Franchise[]
+  notifications: AppNotification[]
+  loadWarnings: string[]
+}> {
+  type DataKey =
+    | 'jobs'
+    | 'applications'
+    | 'bookings'
+    | 'hospitals'
+    | 'fleet'
+    | 'ambulanceServiceTypes'
+    | 'team'
+    | 'states'
+    | 'cities'
+    | 'specialties'
+    | 'professionals'
+    | 'subscriptionPlans'
+    | 'userSubscriptions'
+    | 'franchises'
+    | 'notifications'
+
+  const entries: { key: DataKey; promise: Promise<unknown> }[] = [
+    { key: 'jobs', promise: adminApi.fetchJobs() },
+    { key: 'applications', promise: adminApi.fetchApplications() },
+    { key: 'bookings', promise: adminApi.fetchBookings() },
+    { key: 'hospitals', promise: adminApi.fetchHospitals() },
+    { key: 'fleet', promise: adminApi.fetchFleet() },
+    { key: 'ambulanceServiceTypes', promise: adminApi.fetchAmbulanceServiceTypes() },
+    { key: 'team', promise: adminApi.fetchTeam() },
+    { key: 'states', promise: adminApi.fetchStates() },
+    { key: 'cities', promise: adminApi.fetchCities() },
+    { key: 'specialties', promise: adminApi.fetchSpecialties() },
+    { key: 'professionals', promise: adminApi.fetchProfessionals() },
+    { key: 'subscriptionPlans', promise: adminApi.fetchSubscriptionPlans() },
+    { key: 'userSubscriptions', promise: adminApi.fetchSubscriptions() },
+    { key: 'franchises', promise: adminApi.fetchFranchises() },
+    { key: 'notifications', promise: adminApi.fetchNotifications() },
+  ]
+
+  const settled = await Promise.allSettled(entries.map((e) => e.promise))
+  const loadWarnings: string[] = []
+  const empty = {
+    jobs: [],
+    applications: [],
+    bookings: [],
+    hospitals: [],
+    fleet: [],
+    ambulanceServiceTypes: [],
+    team: [],
+    states: [],
+    cities: [],
+    specialties: [],
+    professionals: [],
+    subscriptionPlans: [],
+    userSubscriptions: [],
+    franchises: [],
+    notifications: [],
+    loadWarnings: [],
   }
+
+  for (let i = 0; i < settled.length; i++) {
+    const result = settled[i]
+    const key = entries[i].key
+    if (result.status === 'fulfilled') {
+      ;(empty as Record<string, unknown>)[key] = result.value
+    } else {
+      const reason = result.reason
+      if (reason instanceof ApiError) {
+        if (reason.status === 401) {
+          throw reason
+        }
+        loadWarnings.push(`${key}: ${reason.message}`)
+      } else {
+        loadWarnings.push(`${key}: failed to load`)
+      }
+    }
+  }
+
+  return { ...empty, loadWarnings }
 }
 
 export function DirectoryProvider({ children }: { children: ReactNode }) {
@@ -151,6 +202,9 @@ export function DirectoryProvider({ children }: { children: ReactNode }) {
   const [notifications, setNotifications] = useState<AppNotification[]>([])
   const [hospitals, setHospitals] = useState<Hospital[]>([])
   const [fleet, setFleet] = useState<AmbulanceVehicle[]>([])
+  const [ambulanceServiceTypes, setAmbulanceServiceTypes] = useState<
+    AmbulanceServiceTypeConfig[]
+  >([])
   const [team, setTeam] = useState<TeamMember[]>([])
   const [states, setStates] = useState<AppState[]>([])
   const [cities, setCities] = useState<City[]>([])
@@ -171,6 +225,7 @@ export function DirectoryProvider({ children }: { children: ReactNode }) {
       setBookings(data.bookings)
       setHospitals(data.hospitals)
       setFleet(data.fleet)
+      setAmbulanceServiceTypes(data.ambulanceServiceTypes)
       setTeam(data.team)
       setStates(data.states)
       setCities(data.cities)
@@ -185,7 +240,14 @@ export function DirectoryProvider({ children }: { children: ReactNode }) {
       )
       setFranchises(data.franchises)
       setNotifications(data.notifications)
+      setError(
+        data.loadWarnings.length > 0 ? data.loadWarnings.join(' · ') : null,
+      )
     } catch (e) {
+      if (e instanceof ApiError && e.status === 401) {
+        setError(null)
+        return
+      }
       setError(e instanceof ApiError ? e.message : 'Failed to load data from API')
     } finally {
       setLoading(false)
@@ -208,6 +270,13 @@ export function DirectoryProvider({ children }: { children: ReactNode }) {
       hospitals,
       setHospitals,
       fleet,
+      ambulanceServiceTypes,
+      updateAmbulanceServiceType: async (id, patch) => {
+        const updated = await adminApi.updateAmbulanceServiceType(id, patch)
+        setAmbulanceServiceTypes((prev) =>
+          prev.map((t) => (t.id === id ? { ...t, ...updated } : t)),
+        )
+      },
       team,
       states,
       cities,
@@ -420,6 +489,7 @@ export function DirectoryProvider({ children }: { children: ReactNode }) {
       notifications,
       hospitals,
       fleet,
+      ambulanceServiceTypes,
       team,
       states,
       cities,

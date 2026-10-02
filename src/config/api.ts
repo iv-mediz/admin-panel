@@ -3,13 +3,24 @@ function configuredBaseUrl(): string {
   return (import.meta.env.VITE_API_BASE_URL ?? '').trim().replace(/\/$/, '')
 }
 
-/** Resolved URL used for fetch (HTTPS admin uses same-origin proxy when backend is HTTP). */
+/** Resolved URL used for fetch (HTTPS admin uses same-origin Vercel proxy to EC2). */
 export function getApiBaseUrl(): string {
   const configured = configuredBaseUrl()
   if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
-    if (!configured || configured.startsWith('http://')) {
-      return `${window.location.origin}/api/v1`
+    const adminOrigin = window.location.origin
+    if (!configured) {
+      return `${adminOrigin}/api/v1`
     }
+    try {
+      const apiOrigin = new URL(configured).origin
+      if (apiOrigin === adminOrigin) {
+        return configured
+      }
+    } catch {
+      return `${adminOrigin}/api/v1`
+    }
+    // Cross-origin API (typical: HTTP EC2) — always proxy to avoid mixed content / dead HTTPS hosts.
+    return `${adminOrigin}/api/v1`
   }
   return configured
 }

@@ -145,6 +145,16 @@ export interface AmbulanceService {
   fareFrom: string
 }
 
+export interface AmbulanceServiceTypeConfig {
+  id: 'bls' | 'als' | 'neo' | string
+  title: string
+  subtitle: string
+  basePrice: number
+  farePerKm: number
+  sortOrder?: number
+  status?: string
+}
+
 export interface AppNotification {
   id: string
   title: string
