@@ -9,7 +9,7 @@ export type ApplicationStatus =
   | 'Rejected'
 export type HospitalStatus = 'Partner' | 'Pending'
 export type VehicleStatus = 'Active' | 'Pending'
-export type BookingStatus = 'On the way' | 'Assigned' | 'Completed' | 'Cancelled'
+export type BookingStatus = 'New' | 'On the way' | 'Assigned' | 'Completed' | 'Cancelled'
 export type TeamRole = 'Super Admin' | 'Recruiter' | 'Dispatch' | 'Support' | 'Hospital Relations' | 'Operations'
 export type TeamStatus = 'Active' | 'Invited'
 export type NotificationType = 'ambulance' | 'job' | 'profile' | 'hospital'
@@ -138,6 +138,14 @@ export interface Booking {
   vehicle: string
   state: string
   district: string
+  fleetId?: string
+  consumerUserId?: string
+  contactPhone?: string
+  notes?: string
+  paymentMethod?: string
+  bookedByName?: string
+  bookedByPhone?: string
+  bookedByEmail?: string
 }
 
 export interface AmbulanceService {

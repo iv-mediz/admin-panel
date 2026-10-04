@@ -6,11 +6,13 @@ import { resolveMediaUrl } from '../components/HospitalImageUpload'
 import Modal from '../components/Modal'
 import ActiveToggle from '../components/ActiveToggle'
 import StatusChip from '../components/StatusChip'
+import * as adminApi from '../api/admin'
 import { useDirectory } from '../data/directory'
-import type { AmbulanceService, AmbulanceServiceTypeConfig, OnboardLocationState } from '../types'
+import type { AmbulanceService, AmbulanceServiceTypeConfig, Booking, OnboardLocationState } from '../types'
+import { sortBookingsNewestFirst } from '../utils/bookingSort'
 import { matchesLocation } from '../utils/locationFilter'
 
-const BOOKING_TABS = ['All', 'On the way', 'Assigned', 'Completed', 'Cancelled'] as const
+const BOOKING_TABS = ['All', 'New', 'On the way', 'Assigned', 'Completed', 'Cancelled'] as const
 const FLEET_TABS = ['All', 'Active', 'Pending'] as const
 const ICONS: Record<AmbulanceService['id'], LucideIcon> = { bls: Ambulance, als: HeartPulse, neo: Baby }
 
@@ -24,6 +26,7 @@ export default function Ambulances() {
     updateAmbulanceServiceType,
     setVehicleStatus,
     setVehicleActive,
+    updateBooking,
     loading,
     error,
   } = useDirectory()
@@ -74,6 +77,10 @@ export default function Ambulances() {
   const [stateFilter, setStateFilter] = useState('All')
   const [districtFilter, setDistrictFilter] = useState('All')
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [assignTarget, setAssignTarget] = useState<Booking | null>(null)
+  const [assignFleetId, setAssignFleetId] = useState('')
+  const [assignSaving, setAssignSaving] = useState(false)
+  const [assignError, setAssignError] = useState<string | null>(null)
   const selected = selectedId ? fleet.find((v) => v.id === selectedId) ?? null : null
   const notice = (location.state as OnboardLocationState | null)?.justOnboarded
 
@@ -91,14 +98,57 @@ export default function Ambulances() {
   }, [fleet, query, tab, stateFilter, districtFilter])
 
   const filteredBookings = useMemo(() => {
-    return bookings.filter((b) => {
+    const filtered = bookings.filter((b) => {
       const q = query.toLowerCase()
+      const booker = (b.bookedByName ?? '').toLowerCase()
+      const phone = (b.bookedByPhone ?? b.contactPhone ?? '').toLowerCase()
       const matchesQuery =
-        !q || b.id.toLowerCase().includes(q) || b.pickup.toLowerCase().includes(q) || b.patientName.toLowerCase().includes(q)
+        !q ||
+        b.id.toLowerCase().includes(q) ||
+        b.pickup.toLowerCase().includes(q) ||
+        b.patientName.toLowerCase().includes(q) ||
+        booker.includes(q) ||
+        phone.includes(q)
       const matchesLoc = matchesLocation(b, stateFilter, districtFilter)
       return matchesQuery && matchesLoc && (tab === 'All' || b.status === tab)
     })
+    return sortBookingsNewestFirst(filtered)
   }, [bookings, query, tab, stateFilter, districtFilter])
+
+  const fleetForAssign = useMemo(() => {
+    if (!assignTarget) return []
+    return fleet
+      .filter((v) => v.status === 'Active')
+      .sort((a, b) => {
+        const sameDistrict =
+          (a.district === assignTarget.district ? 0 : 1) -
+          (b.district === assignTarget.district ? 0 : 1)
+        if (sameDistrict !== 0) return sameDistrict
+        return a.operator.localeCompare(b.operator)
+      })
+  }, [fleet, assignTarget])
+
+  async function submitAssignDriver() {
+    if (!assignTarget || !assignFleetId) return
+    setAssignSaving(true)
+    setAssignError(null)
+    try {
+      const updated = await adminApi.assignBooking(assignTarget.id, { fleetId: assignFleetId })
+      updateBooking(updated)
+      setAssignTarget(null)
+      setAssignFleetId('')
+    } catch (e) {
+      setAssignError(e instanceof Error ? e.message : 'Could not assign driver')
+    } finally {
+      setAssignSaving(false)
+    }
+  }
+
+  function openAssign(booking: Booking) {
+    setAssignTarget(booking)
+    setAssignFleetId(booking.fleetId ?? '')
+    setAssignError(null)
+  }
 
   function switchView(next: 'Fleet' | 'Bookings') {
     setView(next)
@@ -324,34 +374,64 @@ export default function Ambulances() {
               <tr>
                 <th>Booking</th>
                 <th>Route</th>
+                <th>Booked by</th>
                 <th>Patient</th>
                 <th>Driver</th>
                 <th>Fare</th>
                 <th>Status</th>
+                <th />
               </tr>
             </thead>
             <tbody>
-              {filteredBookings.map((b) => (
-                <tr key={b.id}>
-                  <td>
-                    <div className="cell-title">{b.id}</div>
-                    <div className="cell-sub">{b.serviceType}</div>
-                  </td>
-                  <td>
-                    {b.pickup} → {b.drop}
-                    <div className="cell-sub">{b.dateTime}</div>
-                  </td>
-                  <td>{b.patientName}</td>
-                  <td>
-                    {b.driver}
-                    <div className="cell-sub">{b.vehicle}</div>
-                  </td>
-                  <td style={{ fontWeight: 800, color: 'var(--navy)' }}>{b.fare}</td>
-                  <td>
-                    <StatusChip label={b.status} />
-                  </td>
-                </tr>
-              ))}
+              {filteredBookings.map((b) => {
+                const bookerName = b.bookedByName?.trim() || 'App user'
+                const bookerPhone =
+                  b.bookedByPhone?.trim() || b.contactPhone?.trim() || '—'
+                const canAssign = b.status !== 'Completed' && b.status !== 'Cancelled'
+                const driverLabel =
+                  b.driver?.trim() && b.driver !== '—' ? b.driver : 'Unassigned'
+                return (
+                  <tr key={b.id}>
+                    <td>
+                      <div className="cell-title">{b.id}</div>
+                      <div className="cell-sub">{b.serviceType}</div>
+                    </td>
+                    <td>
+                      {b.pickup} → {b.drop}
+                      <div className="cell-sub">{b.dateTime}</div>
+                    </td>
+                    <td>
+                      <div className="cell-title">{bookerName}</div>
+                      <div className="cell-sub">{bookerPhone}</div>
+                      {b.bookedByEmail ? (
+                        <div className="cell-sub">{b.bookedByEmail}</div>
+                      ) : null}
+                    </td>
+                    <td>{b.patientName}</td>
+                    <td>
+                      {driverLabel}
+                      <div className="cell-sub">{b.vehicle !== '—' ? b.vehicle : '—'}</div>
+                    </td>
+                    <td style={{ fontWeight: 800, color: 'var(--navy)' }}>{b.fare}</td>
+                    <td>
+                      <StatusChip label={b.status} />
+                    </td>
+                    <td>
+                      {canAssign ? (
+                        <button
+                          type="button"
+                          className="btn btn-ghost btn-sm"
+                          onClick={() => openAssign(b)}
+                        >
+                          {driverLabel === 'Unassigned' ? 'Assign' : 'Reassign'}
+                        </button>
+                      ) : (
+                        <span className="muted">—</span>
+                      )}
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>
@@ -400,7 +480,10 @@ export default function Ambulances() {
 
           <h4 style={{ fontSize: 14, fontWeight: 800, marginBottom: 4 }}>Uploaded vehicle photos</h4>
           <p className="muted" style={{ marginBottom: 8 }}>
-            Photos submitted during operator registration — verify before approving the fleet.
+            Operators must upload <strong>Front view</strong>, <strong>Side view</strong>, and{' '}
+            <strong>Interior</strong> (required), plus any extra photos. If you only see labels
+            without images, the upload failed — ask them to submit registration again after the
+            backend is updated.
           </p>
 
           {(selected.vehiclePhotos?.length ?? 0) > 0 ? (
@@ -445,6 +528,89 @@ export default function Ambulances() {
               </button>
             </div>
           )}
+        </Modal>
+      )}
+
+      {assignTarget && (
+        <Modal
+          title={`Assign driver · ${assignTarget.id}`}
+          onClose={() => {
+            setAssignTarget(null)
+            setAssignFleetId('')
+            setAssignError(null)
+          }}
+        >
+          <div className="detail-grid" style={{ marginBottom: 16 }}>
+            <div className="meta">
+              <span>Booked by</span>
+              <strong>{assignTarget.bookedByName?.trim() || 'App user'}</strong>
+            </div>
+            <div className="meta">
+              <span>Contact</span>
+              <strong>
+                {assignTarget.bookedByPhone?.trim() ||
+                  assignTarget.contactPhone?.trim() ||
+                  '—'}
+              </strong>
+            </div>
+            <div className="meta">
+              <span>Patient</span>
+              <strong>{assignTarget.patientName}</strong>
+            </div>
+            <div className="meta">
+              <span>Route</span>
+              <strong>
+                {assignTarget.pickup} → {assignTarget.drop}
+              </strong>
+            </div>
+          </div>
+
+          <label htmlFor="assign-fleet" style={{ display: 'block', fontWeight: 700, marginBottom: 6 }}>
+            Fleet vehicle
+          </label>
+          <select
+            id="assign-fleet"
+            className="select"
+            value={assignFleetId}
+            onChange={(e) => setAssignFleetId(e.target.value)}
+          >
+            <option value="">Select an active vehicle</option>
+            {fleetForAssign.map((v) => (
+              <option key={v.id} value={v.id}>
+                {v.operator} · {v.vehicle} · {v.driver} ({v.city})
+              </option>
+            ))}
+          </select>
+          {fleetForAssign.length === 0 ? (
+            <p className="hint" style={{ marginTop: 8 }}>
+              No active fleet vehicles. Approve a vehicle under Fleet first.
+            </p>
+          ) : null}
+          {assignError ? (
+            <p className="hint" style={{ marginTop: 8, color: 'var(--danger)' }}>
+              {assignError}
+            </p>
+          ) : null}
+          <div style={{ marginTop: 16, display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={() => {
+                setAssignTarget(null)
+                setAssignFleetId('')
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="btn btn-primary"
+              disabled={!assignFleetId || assignSaving}
+              onClick={() => void submitAssignDriver()}
+            >
+              {assignSaving ? 'Assigning…' : 'Assign & dispatch'}
+            </button>
+          </div>
         </Modal>
       )}
     </div>

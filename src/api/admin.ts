@@ -178,6 +178,53 @@ export async function fetchBookings(query: LocationQuery & { status?: string } =
   )
 }
 
+export interface HomeCarouselSlide {
+  id: string
+  title: string
+  subtitle?: string
+  imageUrl: string
+  actionUrl?: string
+  sortOrder: number
+  isActive: boolean
+}
+
+export async function fetchHomeCarouselSlides() {
+  return apiRequest<HomeCarouselSlide[]>('home-carousel')
+}
+
+export async function createHomeCarouselSlide(body: Partial<HomeCarouselSlide>) {
+  return apiRequest<HomeCarouselSlide>('home-carousel', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  })
+}
+
+export async function updateHomeCarouselSlide(id: string, body: Partial<HomeCarouselSlide>) {
+  return apiRequest<HomeCarouselSlide>(`home-carousel/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(body),
+  })
+}
+
+export async function deleteHomeCarouselSlide(id: string) {
+  return apiRequest<{ success: boolean }>(`home-carousel/${id}`, { method: 'DELETE' })
+}
+
+export async function assignBooking(
+  id: string,
+  body: { fleetId: string; status?: Booking['status']; driver?: string; vehicle?: string },
+) {
+  return apiRequest<Booking>(`bookings/${id}/assign`, {
+    method: 'PATCH',
+    body: JSON.stringify({
+      status: body.status ?? 'On the way',
+      fleetId: body.fleetId,
+      driver: body.driver,
+      vehicle: body.vehicle,
+    }),
+  })
+}
+
 export async function fetchProfessionals(query: LocationQuery = {}) {
   return apiRequest<Professional[]>(
     `professionals${qs({ state: query.state, district: query.district })}`,

@@ -6,6 +6,7 @@ const CLASS_MAP: Record<string, string> = {
   Offer: 'chip-offer',
   Completed: 'chip-completed',
   Cancelled: 'chip-cancelled',
+  New: 'chip-review',
   'On the way': 'chip-way',
   Assigned: 'chip-assigned',
   Active: 'chip-active',

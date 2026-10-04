@@ -44,6 +44,7 @@ interface DirectoryContextValue {
   jobs: Job[]
   applications: Application[]
   bookings: Booking[]
+  updateBooking: (booking: Booking) => void
   notifications: AppNotification[]
   hospitals: Hospital[]
   setHospitals: React.Dispatch<React.SetStateAction<Hospital[]>>
@@ -270,6 +271,12 @@ export function DirectoryProvider({ children }: { children: ReactNode }) {
       jobs,
       applications,
       bookings,
+      updateBooking: (booking) => {
+        setBookings((prev) => {
+          const next = prev.map((b) => (b.id === booking.id ? { ...b, ...booking } : b))
+          return next.some((b) => b.id === booking.id) ? next : [booking, ...next]
+        })
+      },
       notifications,
       hospitals,
       setHospitals,
@@ -389,9 +396,17 @@ export function DirectoryProvider({ children }: { children: ReactNode }) {
         }
       },
       setVehicleStatus: (id, status) => {
-        setFleet((prev) => prev.map((v) => (v.id === id ? { ...v, status } : v)))
+        const isActive = status === 'Active'
+        setFleet((prev) =>
+          prev.map((v) =>
+            v.id === id ? { ...v, status, ...(isActive ? { isActive: true } : {}) } : v,
+          ),
+        )
         if (hasApiBackend()) {
-          void adminApi.updateFleetVehicle(id, { status })
+          void adminApi.updateFleetVehicle(
+            id,
+            isActive ? { status, isActive: true } : { status },
+          )
         }
       },
       setVehicleActive: (id, isActive) => {
