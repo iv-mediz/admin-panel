@@ -7,7 +7,9 @@ function s3ObjectKeyFromUrl(url: string): string | null {
     const host = new URL(url).hostname.toLowerCase()
     if (!host.includes('amazonaws.com') && !host.includes('ivmediz')) return null
     const key = decodeURIComponent(new URL(url).pathname.replace(/^\//, ''))
-    if (key.startsWith('fleet/') || key.startsWith('hospitals/')) return key
+    if (key.startsWith('fleet/') || key.startsWith('hospitals/') || key.startsWith('carousel/')) {
+      return key
+    }
     return null
   } catch {
     return null

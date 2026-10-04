@@ -188,6 +188,39 @@ export interface HomeCarouselSlide {
   isActive: boolean
 }
 
+export async function uploadHomeCarouselBanner(file: File): Promise<{ url: string }> {
+  if (!hasApiBackend()) {
+    throw new ApiError('VITE_API_BASE_URL is not configured', 0)
+  }
+  const form = new FormData()
+  form.append('file', file)
+  const headers = new Headers({ Accept: 'application/json' })
+  const token = getAccessToken()
+  if (token) headers.set('Authorization', `Bearer ${token}`)
+  const response = await fetch(apiUrl('media/home-carousel/banner'), {
+    method: 'POST',
+    headers,
+    body: form,
+  })
+  const text = await response.text()
+  let data: unknown = null
+  if (text) {
+    try {
+      data = JSON.parse(text)
+    } catch {
+      data = text
+    }
+  }
+  if (!response.ok) {
+    const message =
+      typeof data === 'object' && data !== null && 'message' in data
+        ? String((data as { message: unknown }).message)
+        : `Upload failed (${response.status})`
+    throw new ApiError(message, response.status)
+  }
+  return data as { url: string }
+}
+
 export async function fetchHomeCarouselSlides() {
   return apiRequest<HomeCarouselSlide[]>('home-carousel')
 }
