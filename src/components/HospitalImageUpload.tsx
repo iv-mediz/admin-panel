@@ -2,13 +2,29 @@ import { useEffect, useRef, useState } from 'react'
 import { getApiBaseUrl } from '../config/api'
 import ImageUploadPlaceholder from './ImageUploadPlaceholder'
 
+function s3ObjectKeyFromUrl(url: string): string | null {
+  try {
+    const host = new URL(url).hostname.toLowerCase()
+    if (!host.includes('amazonaws.com') && !host.includes('ivmediz')) return null
+    const key = decodeURIComponent(new URL(url).pathname.replace(/^\//, ''))
+    if (key.startsWith('fleet/') || key.startsWith('hospitals/')) return key
+    return null
+  } catch {
+    return null
+  }
+}
+
 export function resolveMediaUrl(path?: string | null): string | null {
   if (!path?.trim()) return null
   const trimmed = path.trim()
+  const base = getApiBaseUrl().replace(/\/$/, '')
   if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    const key = s3ObjectKeyFromUrl(trimmed)
+    if (key) {
+      return `${base}/media/assets?key=${encodeURIComponent(key)}`
+    }
     return trimmed
   }
-  const base = getApiBaseUrl().replace(/\/$/, '')
   const origin = base.replace(/\/api\/v1$/, '')
   let normalized = trimmed.startsWith('/') ? trimmed.slice(1) : trimmed
   if (!normalized.startsWith('api/v1/')) {
