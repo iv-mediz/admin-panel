@@ -85,6 +85,7 @@ export interface Professional {
   timeAvailability?: string[]
   subscriptionPlan?: SubscriptionPlanName
   subscriptionStatus?: SubscriptionStatus
+  registeredAt?: string
 }
 
 export interface Hospital {

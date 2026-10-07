@@ -33,6 +33,23 @@ interface UserForm {
   timeAvailability: string[]
 }
 
+function registeredAtMillis(value?: string) {
+  if (!value?.trim()) return 0
+  const parsed = Date.parse(value)
+  return Number.isNaN(parsed) ? 0 : parsed
+}
+
+function formatRegisteredAt(value?: string) {
+  if (!value?.trim()) return '—'
+  const d = new Date(value)
+  if (Number.isNaN(d.getTime())) return '—'
+  return d.toLocaleDateString('en-IN', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  })
+}
+
 const emptyForm: UserForm = {
   name: '',
   email: '',
@@ -74,14 +91,16 @@ export default function Professionals() {
   const [form, setForm] = useState<UserForm>(emptyForm)
 
   const filtered = useMemo(() => {
-    return professionals.filter((u) => {
-      const q = query.toLowerCase()
-      const matchesQuery = !q || u.name.toLowerCase().includes(q) || u.specialization.toLowerCase().includes(q)
-      const matchesRole = role === 'All' || u.role === role
-      const matchesEmployment = employment === 'All' || u.employmentPreference === employment
-      const matchesLoc = matchesLocation(u, stateFilter, districtFilter)
-      return matchesQuery && matchesRole && matchesEmployment && matchesLoc
-    })
+    return professionals
+      .filter((u) => {
+        const q = query.toLowerCase()
+        const matchesQuery = !q || u.name.toLowerCase().includes(q) || u.specialization.toLowerCase().includes(q)
+        const matchesRole = role === 'All' || u.role === role
+        const matchesEmployment = employment === 'All' || u.employmentPreference === employment
+        const matchesLoc = matchesLocation(u, stateFilter, districtFilter)
+        return matchesQuery && matchesRole && matchesEmployment && matchesLoc
+      })
+      .sort((a, b) => registeredAtMillis(b.registeredAt) - registeredAtMillis(a.registeredAt))
   }, [professionals, query, role, employment, stateFilter, districtFilter])
 
   function setField<K extends keyof UserForm>(key: K, value: UserForm[K]) {
@@ -115,6 +134,7 @@ export default function Professionals() {
       status: 'Pending',
       applications: 0,
       employmentPreference: form.employmentPreference,
+      registeredAt: new Date().toISOString(),
       timeAvailability:
         form.employmentPreference === 'Full Time' ? undefined : form.timeAvailability.length ? form.timeAvailability : undefined,
     })
@@ -172,6 +192,7 @@ export default function Professionals() {
               <th>Role</th>
               <th>Location</th>
               <th>Looking for</th>
+              <th>Registered</th>
               <th>Profile</th>
               <th>Subscription</th>
               <th>Status</th>
@@ -203,6 +224,9 @@ export default function Professionals() {
                   {user.timeAvailability && user.timeAvailability.length > 0 && (
                     <div className="cell-sub">{user.timeAvailability.join(', ')}</div>
                   )}
+                </td>
+                <td className="muted" style={{ whiteSpace: 'nowrap' }}>
+                  {formatRegisteredAt(user.registeredAt)}
                 </td>
                 <td>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -272,6 +296,10 @@ export default function Professionals() {
             <div className="meta">
               <span>Looking for</span>
               <strong>{selected.employmentPreference}</strong>
+            </div>
+            <div className="meta">
+              <span>Registered</span>
+              <strong>{formatRegisteredAt(selected.registeredAt)}</strong>
             </div>
           </div>
           {selected.timeAvailability && selected.timeAvailability.length > 0 && (
