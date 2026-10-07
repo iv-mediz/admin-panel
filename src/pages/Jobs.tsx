@@ -25,6 +25,8 @@ interface JobForm {
   category: JobCategory
   department: string
   availability: string
+  locumFrom: string
+  locumTo: string
   description: string
 }
 
@@ -39,6 +41,8 @@ const emptyJob: JobForm = {
   category: 'Nursing',
   department: '',
   availability: '',
+  locumFrom: '',
+  locumTo: '',
   description: '',
 }
 
@@ -119,6 +123,9 @@ export default function Jobs() {
       category: form.category,
       department: form.department,
       availability: form.availability,
+      ...(form.type === 'Locum'
+        ? { locumFrom: form.locumFrom.trim(), locumTo: form.locumTo.trim() }
+        : {}),
       description: form.description,
       posted: 'Just now',
       status: 'Active',
@@ -333,6 +340,29 @@ export default function Jobs() {
                 placeholder="9 am to 7 pm"
                 hint="Use a time range like 9 am to 7 pm"
               />
+              {form.type === 'Locum' ? (
+                <>
+                  <div className="field">
+                    <label>Locum from</label>
+                    <input
+                      type="date"
+                      required
+                      value={form.locumFrom}
+                      onChange={(e) => setForm({ ...form, locumFrom: e.target.value })}
+                    />
+                  </div>
+                  <div className="field">
+                    <label>Locum to</label>
+                    <input
+                      type="date"
+                      required
+                      value={form.locumTo}
+                      min={form.locumFrom || undefined}
+                      onChange={(e) => setForm({ ...form, locumTo: e.target.value })}
+                    />
+                  </div>
+                </>
+              ) : null}
               <div className="field full">
                 <label>Description</label>
                 <textarea rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} required />
@@ -349,7 +379,8 @@ export default function Jobs() {
                   partnerHospitals.length === 0 ||
                   !form.hospitalId ||
                   !form.cityDistrict.trim() ||
-                  !form.availability.trim()
+                  !form.availability.trim() ||
+                  (form.type === 'Locum' && (!form.locumFrom.trim() || !form.locumTo.trim()))
                 }
               >
                 {saving ? 'Publishing…' : 'Publish job'}
@@ -381,6 +412,14 @@ export default function Jobs() {
               <div className="meta">
                 <span>Working hours</span>
                 <strong>{selected.availability}</strong>
+              </div>
+            ) : null}
+            {selected.type === 'Locum' && (selected.locumFrom || selected.locumTo) ? (
+              <div className="meta">
+                <span>Locum period</span>
+                <strong>
+                  {selected.locumFrom || '—'} → {selected.locumTo || '—'}
+                </strong>
               </div>
             ) : null}
           </div>

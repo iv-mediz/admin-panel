@@ -125,7 +125,9 @@ export default function Cities() {
               <div className="field">
                 <label>State</label>
                 <select value={form.stateId} onChange={(e) => setForm({ ...form, stateId: e.target.value })} required>
-                  {states.map((s) => (
+                  {states
+                    .filter((s) => s.status === 'Active')
+                    .map((s) => (
                     <option key={s.id} value={s.id}>
                       {s.name}
                     </option>

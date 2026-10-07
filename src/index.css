@@ -626,6 +626,7 @@ a {
 }
 
 .chip-offer,
+.chip-recruited,
 .chip-completed,
 .chip-partner {
   background: var(--success-bg);

@@ -69,8 +69,8 @@ export default function Specialties() {
         <div>
           <h3>Specialties</h3>
           <p>
-            Home “Explore specialties” chips and job post / filter department lists on mobile and
-            admin
+            Home “Explore specialties” chips, job departments, profile specialization dropdowns on
+            mobile, and admin job/professional forms
           </p>
         </div>
         <button className="btn btn-primary" onClick={() => setOpen(true)}>

@@ -93,6 +93,10 @@ export async function updateApplicationStatus(id: string, status: Application['s
   })
 }
 
+export async function fetchProfessionalDocuments(id: string) {
+  return apiRequest<{ documents: Application['documents'] }>(`professionals/${id}/documents`)
+}
+
 export async function fetchHospitals(query: LocationQuery & { status?: string } = {}) {
   return apiRequest<Hospital[]>(
     `hospitals${qs({ state: query.state, district: query.district, status: query.status })}`,
@@ -289,6 +293,20 @@ export async function createState(body: Partial<AppState>) {
 
 export async function createCity(body: Partial<City>) {
   return apiRequest<City>('locations/cities', { method: 'POST', body: JSON.stringify(body) })
+}
+
+export async function updateState(id: string, body: Partial<AppState>) {
+  return apiRequest<AppState>(`locations/states/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(body),
+  })
+}
+
+export async function updateCity(id: string, body: Partial<City>) {
+  return apiRequest<City>(`locations/cities/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(body),
+  })
 }
 
 export async function fetchSpecialties() {

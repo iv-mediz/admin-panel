@@ -4,6 +4,7 @@ const CLASS_MAP: Record<string, string> = {
   'Interview Scheduled': 'chip-interview',
   Rejected: 'chip-rejected',
   Offer: 'chip-offer',
+  Recruited: 'chip-recruited',
   Completed: 'chip-completed',
   Cancelled: 'chip-cancelled',
   New: 'chip-review',

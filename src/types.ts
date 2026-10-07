@@ -6,6 +6,7 @@ export type ApplicationStatus =
   | 'Shortlisted'
   | 'Interview Scheduled'
   | 'Offer'
+  | 'Recruited'
   | 'Rejected'
 export type HospitalStatus = 'Partner' | 'Pending'
 export type VehicleStatus = 'Active' | 'Pending'
@@ -28,6 +29,8 @@ export interface Job {
   category: JobCategory
   department: string
   availability: string
+  locumFrom?: string
+  locumTo?: string
   posted: string
   status: JobStatus
   applicants: number
@@ -55,10 +58,17 @@ export interface Application {
   employmentPreference: JobType
   timeAvailability?: string[]
   resumeUrl?: string
+  documents?: {
+    id: string
+    name: string
+    fileUrl?: string
+    fileName?: string
+  }[]
 }
 
 export interface Professional {
   id: string
+  userId?: string
   name: string
   role: string
   specialization: string

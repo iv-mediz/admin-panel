@@ -435,9 +435,15 @@ export function DirectoryProvider({ children }: { children: ReactNode }) {
       },
       setStateStatus: (id, status) => {
         setStates((prev) => prev.map((s) => (s.id === id ? { ...s, status } : s)))
+        if (hasApiBackend()) {
+          void adminApi.updateState(id, { status })
+        }
       },
       setCityStatus: (id, status) => {
         setCities((prev) => prev.map((c) => (c.id === id ? { ...c, status } : c)))
+        if (hasApiBackend()) {
+          void adminApi.updateCity(id, { status })
+        }
       },
       setFranchiseStatus: (id, status) => {
         setFranchises((prev) => prev.map((f) => (f.id === id ? { ...f, status } : f)))

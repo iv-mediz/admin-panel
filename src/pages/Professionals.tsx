@@ -47,8 +47,22 @@ const emptyForm: UserForm = {
 }
 
 export default function Professionals() {
-  const { professionals, states, cities, addProfessional, removeProfessional, setProfessionalStatus } =
-    useDirectory()
+  const {
+    professionals,
+    states,
+    cities,
+    specialties,
+    addProfessional,
+    removeProfessional,
+    setProfessionalStatus,
+  } = useDirectory()
+
+  const specializationOptions = useMemo(() => {
+    return specialties
+      .filter((s) => s.status === 'Active')
+      .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name))
+      .map((s) => s.name)
+  }, [specialties])
   const [query, setQuery] = useState('')
   const [role, setRole] = useState<(typeof ROLES)[number]>('All')
   const [employment, setEmployment] = useState<(typeof EMPLOYMENT)[number]>('All')
@@ -307,7 +321,19 @@ export default function Professionals() {
             </div>
             <div className="field">
               <label>Specialization</label>
-              <input value={form.specialization} onChange={(e) => setField('specialization', e.target.value)} required />
+              <select
+                required
+                value={form.specialization}
+                onChange={(e) => setField('specialization', e.target.value)}
+              >
+                <option value="">Select specialization…</option>
+                {specializationOptions.map((name) => (
+                  <option key={name} value={name}>
+                    {name}
+                  </option>
+                ))}
+              </select>
+              <span className="hint">Manage options under Locations → Specialties</span>
             </div>
             <div className="field">
               <label>Experience</label>

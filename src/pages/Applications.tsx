@@ -8,7 +8,15 @@ import { useDirectory } from '../data/directory'
 import type { Application, ApplicationStatus } from '../types'
 import { matchesLocation } from '../utils/locationFilter'
 
-const TABS = ['All', 'Under Review', 'Shortlisted', 'Interview Scheduled', 'Offer', 'Rejected'] as const
+const TABS = [
+  'All',
+  'Under Review',
+  'Shortlisted',
+  'Interview Scheduled',
+  'Offer',
+  'Recruited',
+  'Rejected',
+] as const
 const EMPLOYMENT = ['All', 'Full Time', 'Part Time', 'Locum'] as const
 
 export default function Applications() {
@@ -167,9 +175,27 @@ export default function Applications() {
                 )}
               </strong>
             </div>
+            {selected.documents && selected.documents.length > 0 ? (
+              <div className="meta full">
+                <span>Documents</span>
+                <strong style={{ display: 'flex', flexDirection: 'column', gap: 6, fontWeight: 600 }}>
+                  {selected.documents.map((doc) => {
+                    const href = resolveMediaUrl(doc.fileUrl)
+                    return href ? (
+                      <a key={doc.id} href={href} target="_blank" rel="noreferrer">
+                        {doc.name}
+                        {doc.fileName ? ` (${doc.fileName})` : ''}
+                      </a>
+                    ) : (
+                      <span key={doc.id}>{doc.name} — metadata only (re-upload from app)</span>
+                    )
+                  })}
+                </strong>
+              </div>
+            ) : null}
             <div className="meta">
               <span>Experience</span>
-              <strong>{selected.experience}</strong>
+              <strong>{selected.experience?.trim() || '—'}</strong>
             </div>
             <div className="meta">
               <span>Location</span>
