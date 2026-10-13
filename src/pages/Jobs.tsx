@@ -1,4 +1,4 @@
-import { Plus, Search } from 'lucide-react'
+import { Pencil, Plus, Search } from 'lucide-react'
 import { useMemo, useState, type FormEvent } from 'react'
 import CityDistrictSelect from '../components/CityDistrictSelect'
 import LocationFilters from '../components/LocationFilters'
@@ -68,6 +68,7 @@ export default function Jobs() {
   const [stateFilter, setStateFilter] = useState('All')
   const [districtFilter, setDistrictFilter] = useState('All')
   const [open, setOpen] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [selected, setSelected] = useState<Job | null>(null)
   const [form, setForm] = useState<JobForm>(emptyJob)
   const [saving, setSaving] = useState(false)
@@ -136,13 +137,22 @@ export default function Jobs() {
     }
     setSaving(true)
     try {
-      if (hasApiBackend()) {
+      if (editingId) {
+        const { posted: _posted, applicants: _applicants, ...rest } = payload
+        if (hasApiBackend()) {
+          const updated = await adminApi.updateJob(editingId, rest)
+          setJobs((prev) => prev.map((j) => (j.id === editingId ? { ...j, ...updated } : j)))
+        } else {
+          setJobs((prev) => prev.map((j) => (j.id === editingId ? { ...j, ...rest } : j)))
+        }
+      } else if (hasApiBackend()) {
         await adminApi.createJob(payload)
         await refresh()
       } else {
         setJobs((prev) => [{ ...payload, id: `j${Date.now()}` } as Job, ...prev])
       }
       setForm(emptyJob)
+      setEditingId(null)
       setOpen(false)
     } finally {
       setSaving(false)
@@ -158,7 +168,14 @@ export default function Jobs() {
           <h3>Find Healthcare Jobs</h3>
           <p>Same listings that appear in the iv mediz mobile app</p>
         </div>
-        <button className="btn btn-primary" onClick={() => setOpen(true)}>
+        <button
+          className="btn btn-primary"
+          onClick={() => {
+            setEditingId(null)
+            setForm(emptyJob)
+            setOpen(true)
+          }}
+        >
           <Plus size={16} />
           Post job
         </button>
@@ -234,7 +251,32 @@ export default function Jobs() {
                     onChange={(on) => setJobStatus(job.id, on ? 'Active' : 'Paused')}
                   />
                 </td>
-                <td>
+                <td className="row-actions">
+                  <button
+                    className="btn btn-ghost btn-sm"
+                    onClick={() => {
+                      setEditingId(job.id)
+                      setForm({
+                        title: job.title,
+                        hospitalId: job.hospitalId ?? partnerHospitals.find((h) => h.name === job.hospital)?.id ?? '',
+                        state: job.state,
+                        cityDistrict: job.district,
+                        salary: job.salary,
+                        experience: job.experience,
+                        type: job.type,
+                        category: job.category,
+                        department: job.department,
+                        availability: job.availability,
+                        locumFrom: job.locumFrom ?? '',
+                        locumTo: job.locumTo ?? '',
+                        description: job.description,
+                      })
+                      setOpen(true)
+                    }}
+                  >
+                    <Pencil size={14} />
+                    Edit
+                  </button>
                   <button className="btn btn-ghost btn-sm" onClick={() => setSelected(job)}>
                     View
                   </button>
@@ -247,7 +289,13 @@ export default function Jobs() {
       </div>
 
       {open && (
-        <Modal title="Post a healthcare job" onClose={() => setOpen(false)}>
+        <Modal
+          title={editingId ? 'Edit job' : 'Post a healthcare job'}
+          onClose={() => {
+            setOpen(false)
+            setEditingId(null)
+          }}
+        >
           <form onSubmit={saveJob}>
             {partnerHospitals.length === 0 ? (
               <p className="hint" style={{ marginBottom: 16 }}>
@@ -369,7 +417,14 @@ export default function Jobs() {
               </div>
             </div>
             <div className="modal-actions">
-              <button type="button" className="btn btn-outline" onClick={() => setOpen(false)}>
+              <button
+                type="button"
+                className="btn btn-outline"
+                onClick={() => {
+                  setOpen(false)
+                  setEditingId(null)
+                }}
+              >
                 Cancel
               </button>
               <button
@@ -383,7 +438,7 @@ export default function Jobs() {
                   (form.type === 'Locum' && (!form.locumFrom.trim() || !form.locumTo.trim()))
                 }
               >
-                {saving ? 'Publishing…' : 'Publish job'}
+                {saving ? 'Saving…' : editingId ? 'Save changes' : 'Publish job'}
               </button>
             </div>
           </form>

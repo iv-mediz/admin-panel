@@ -1,4 +1,4 @@
-import { Plus, Search, Trash2 } from 'lucide-react'
+import { Pencil, Plus, Search, Trash2 } from 'lucide-react'
 import { useMemo, useState, type FormEvent } from 'react'
 import Modal from '../components/Modal'
 import ActiveToggle from '../components/ActiveToggle'
@@ -27,10 +27,11 @@ const empty = {
 }
 
 export default function Specialties() {
-  const { specialties, addSpecialty, setSpecialtyStatus, removeSpecialty } = useDirectory()
+  const { specialties, addSpecialty, updateSpecialty, setSpecialtyStatus, removeSpecialty } = useDirectory()
   const [query, setQuery] = useState('')
   const [tab, setTab] = useState<(typeof TABS)[number]>('All')
   const [open, setOpen] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState(empty)
 
   const filtered = useMemo(() => {
@@ -47,20 +48,32 @@ export default function Specialties() {
       })
   }, [specialties, query, tab])
 
+  function closeModal() {
+    setOpen(false)
+    setEditingId(null)
+    setForm(empty)
+  }
+
   function submit(e: FormEvent) {
     e.preventDefault()
-    addSpecialty({
-      id: `sp-${Date.now()}`,
+    const payload = {
       name: form.name.trim(),
       jobCategory: form.jobCategory,
       query: form.query.trim(),
       icon: form.icon,
       color: form.color,
       sortOrder: Number(form.sortOrder) || 99,
-      status: 'Active',
-    })
-    setForm(empty)
-    setOpen(false)
+    }
+    if (editingId) {
+      updateSpecialty(editingId, payload)
+    } else {
+      addSpecialty({
+        id: `sp-${Date.now()}`,
+        ...payload,
+        status: 'Active',
+      })
+    }
+    closeModal()
   }
 
   return (
@@ -73,7 +86,14 @@ export default function Specialties() {
             mobile, and admin job/professional forms
           </p>
         </div>
-        <button className="btn btn-primary" onClick={() => setOpen(true)}>
+        <button
+          className="btn btn-primary"
+          onClick={() => {
+            setEditingId(null)
+            setForm(empty)
+            setOpen(true)
+          }}
+        >
           <Plus size={16} />
           Add specialty
         </button>
@@ -140,6 +160,24 @@ export default function Specialties() {
                   <button
                     className="btn btn-ghost btn-sm"
                     onClick={() => {
+                      setEditingId(s.id)
+                      setForm({
+                        name: s.name,
+                        jobCategory: s.jobCategory,
+                        query: s.query,
+                        icon: s.icon,
+                        color: s.color,
+                        sortOrder: s.sortOrder,
+                      })
+                      setOpen(true)
+                    }}
+                  >
+                    <Pencil size={14} />
+                    Edit
+                  </button>
+                  <button
+                    className="btn btn-ghost btn-sm"
+                    onClick={() => {
                       if (confirm(`Remove ${s.name} from the app?`)) removeSpecialty(s)
                     }}
                   >
@@ -154,7 +192,7 @@ export default function Specialties() {
       </div>
 
       {open && (
-        <Modal title="Add specialty" onClose={() => setOpen(false)}>
+        <Modal title={editingId ? 'Edit specialty' : 'Add specialty'} onClose={closeModal}>
           <form onSubmit={submit}>
             <div className="form-grid">
               <div className="field">
@@ -216,10 +254,10 @@ export default function Specialties() {
               </div>
             </div>
             <div className="modal-actions">
-              <button type="button" className="btn btn-outline" onClick={() => setOpen(false)}>
+              <button type="button" className="btn btn-outline" onClick={closeModal}>
                 Cancel
               </button>
-              <button className="btn btn-primary">Add specialty</button>
+              <button className="btn btn-primary">{editingId ? 'Save changes' : 'Add specialty'}</button>
             </div>
           </form>
         </Modal>

@@ -363,6 +363,20 @@ export async function createSubscriptionPlan(body: Partial<SubscriptionPlan>) {
   })
 }
 
+export async function updateSubscriptionPlan(id: string, body: Partial<SubscriptionPlan>) {
+  return apiRequest<SubscriptionPlan>(`subscriptions/plans/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(body),
+  })
+}
+
+export async function updateSubscription(id: string, body: Partial<EntitySubscription> & { planName?: string }) {
+  return apiRequest<EntitySubscription>(`subscriptions/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(body),
+  })
+}
+
 export async function fetchSubscriptions() {
   return apiRequest<EntitySubscription[]>('subscriptions')
 }

@@ -69,13 +69,23 @@ interface DirectoryContextValue {
   addVehicle: (vehicle: AmbulanceVehicle) => void
   addMember: (member: TeamMember) => void
   addState: (state: AppState) => void
+  updateState: (id: string, patch: Partial<AppState>) => void
   addCity: (city: City) => void
+  updateCity: (id: string, patch: Partial<City>) => void
   addSpecialty: (specialty: Specialty) => void
+  updateSpecialty: (id: string, patch: Partial<Specialty>) => void
   setSpecialtyStatus: (id: string, status: LocationStatus) => void
   removeSpecialty: (specialty: Specialty) => void
   addFranchise: (franchise: Franchise) => void
+  updateFranchise: (id: string, patch: Partial<Franchise>) => void
   addProfessional: (professional: Professional) => void
+  updateProfessional: (id: string, patch: Partial<Professional>) => void
   removeProfessional: (id: string) => void
+  updateMember: (id: string, patch: Partial<TeamMember>) => void
+  updateHospital: (id: string, patch: Partial<Hospital>) => void
+  addSubscriptionPlan: (plan: SubscriptionPlan) => void
+  updateSubscriptionPlan: (id: string, patch: Partial<SubscriptionPlan>) => void
+  updateUserSubscription: (id: string, patch: Partial<EntitySubscription> & { planName?: string }) => void
   setHospitalStatus: (id: string, status: HospitalStatus) => void
   setHospitalActive: (id: string, isActive: boolean) => void
   setVehicleStatus: (id: string, status: VehicleStatus) => void
@@ -86,7 +96,6 @@ interface DirectoryContextValue {
   setStateStatus: (id: string, status: LocationStatus) => void
   setCityStatus: (id: string, status: LocationStatus) => void
   setFranchiseStatus: (id: string, status: FranchiseStatus) => void
-  addSubscriptionPlan: (plan: SubscriptionPlan) => void
   updateApplicationStatus: (id: string, status: ApplicationStatus) => void
   activateSubscription: (input: {
     subscriberId: string
@@ -346,6 +355,27 @@ export function DirectoryProvider({ children }: { children: ReactNode }) {
         }
         setCities((prev) => [city, ...prev])
       },
+      updateState: (id, patch) => {
+        setStates((prev) => prev.map((s) => (s.id === id ? { ...s, ...patch } : s)))
+        if (hasApiBackend()) {
+          void adminApi.updateState(id, patch).then((updated) => {
+            setStates((prev) => prev.map((s) => (s.id === id ? updated : s)))
+            if (updated.name) {
+              setCities((prev) =>
+                prev.map((c) => (c.stateId === id ? { ...c, stateName: updated.name } : c)),
+              )
+            }
+          })
+        }
+      },
+      updateCity: (id, patch) => {
+        setCities((prev) => prev.map((c) => (c.id === id ? { ...c, ...patch } : c)))
+        if (hasApiBackend()) {
+          void adminApi.updateCity(id, patch).then((updated) => {
+            setCities((prev) => prev.map((c) => (c.id === id ? updated : c)))
+          })
+        }
+      },
       addSpecialty: (specialty) => {
         if (hasApiBackend()) {
           void adminApi.createSpecialty(specialty).then((created) => {
@@ -354,6 +384,14 @@ export function DirectoryProvider({ children }: { children: ReactNode }) {
           return
         }
         setSpecialties((prev) => [...prev, specialty])
+      },
+      updateSpecialty: (id, patch) => {
+        setSpecialties((prev) => prev.map((s) => (s.id === id ? { ...s, ...patch } : s)))
+        if (hasApiBackend()) {
+          void adminApi.updateSpecialty(id, patch).then((updated) => {
+            setSpecialties((prev) => prev.map((s) => (s.id === id ? updated : s)))
+          })
+        }
       },
       setSpecialtyStatus: (id, status) => {
         setSpecialties((prev) => prev.map((s) => (s.id === id ? { ...s, status } : s)))
@@ -370,8 +408,40 @@ export function DirectoryProvider({ children }: { children: ReactNode }) {
       addFranchise: (franchise) => {
         setFranchises((prev) => [franchise, ...prev])
       },
+      updateFranchise: (id, patch) => {
+        setFranchises((prev) => prev.map((f) => (f.id === id ? { ...f, ...patch } : f)))
+        if (hasApiBackend()) {
+          void adminApi.updateFranchise(id, patch).then((updated) => {
+            setFranchises((prev) => prev.map((f) => (f.id === id ? updated : f)))
+          })
+        }
+      },
       addProfessional: (professional) => {
         setProfessionals((prev) => [professional, ...prev])
+      },
+      updateProfessional: (id, patch) => {
+        setProfessionals((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)))
+        if (hasApiBackend()) {
+          void adminApi.updateProfessional(id, patch).then((updated) => {
+            setProfessionals((prev) => prev.map((p) => (p.id === id ? updated : p)))
+          })
+        }
+      },
+      updateMember: (id, patch) => {
+        setTeam((prev) => prev.map((m) => (m.id === id ? { ...m, ...patch } : m)))
+        if (hasApiBackend()) {
+          void adminApi.updateTeamMember(id, patch).then((updated) => {
+            setTeam((prev) => prev.map((m) => (m.id === id ? updated : m)))
+          })
+        }
+      },
+      updateHospital: (id, patch) => {
+        setHospitals((prev) => prev.map((h) => (h.id === id ? { ...h, ...patch } : h)))
+        if (hasApiBackend()) {
+          void adminApi.updateHospital(id, patch).then((updated) => {
+            setHospitals((prev) => prev.map((h) => (h.id === id ? updated : h)))
+          })
+        }
       },
       removeProfessional: (id) => {
         if (hasApiBackend()) {
@@ -459,6 +529,22 @@ export function DirectoryProvider({ children }: { children: ReactNode }) {
           return
         }
         setSubscriptionPlans((prev) => [...prev, plan])
+      },
+      updateSubscriptionPlan: (id, patch) => {
+        setSubscriptionPlans((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)))
+        if (hasApiBackend()) {
+          void adminApi.updateSubscriptionPlan(id, patch).then((updated) => {
+            setSubscriptionPlans((prev) => prev.map((p) => (p.id === id ? updated : p)))
+          })
+        }
+      },
+      updateUserSubscription: (id, patch) => {
+        setUserSubscriptions((prev) => prev.map((s) => (s.id === id ? { ...s, ...patch, ...(patch.planName ? { plan: patch.planName } : {}) } : s)))
+        if (hasApiBackend()) {
+          void adminApi.updateSubscription(id, patch).then((updated) => {
+            setUserSubscriptions((prev) => prev.map((s) => (s.id === id ? updated : s)))
+          })
+        }
       },
       updateApplicationStatus: (id, status) => {
         setApplications((prev) => prev.map((a) => (a.id === id ? { ...a, status } : a)))

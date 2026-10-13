@@ -1,4 +1,4 @@
-import { Plus, Search, Trash2 } from 'lucide-react'
+import { Pencil, Plus, Search, Trash2 } from 'lucide-react'
 import { useMemo, useState, type FormEvent } from 'react'
 import LocationFilters from '../components/LocationFilters'
 import Modal from '../components/Modal'
@@ -70,6 +70,7 @@ export default function Professionals() {
     cities,
     specialties,
     addProfessional,
+    updateProfessional,
     removeProfessional,
     setProfessionalStatus,
   } = useDirectory()
@@ -87,6 +88,7 @@ export default function Professionals() {
   const [districtFilter, setDistrictFilter] = useState('All')
   const [selected, setSelected] = useState<Professional | null>(null)
   const [open, setOpen] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Professional | null>(null)
   const [form, setForm] = useState<UserForm>(emptyForm)
 
@@ -116,11 +118,16 @@ export default function Professionals() {
     }))
   }
 
+  function closeModal() {
+    setOpen(false)
+    setEditingId(null)
+    setForm(emptyForm)
+  }
+
   function submit(e: FormEvent) {
     e.preventDefault()
     const location = `${form.district}, ${form.state}`
-    addProfessional({
-      id: `u${Date.now()}`,
+    const payload = {
       name: form.name.trim(),
       email: form.email.trim(),
       phone: form.phone.trim(),
@@ -130,16 +137,23 @@ export default function Professionals() {
       state: form.state,
       district: form.district,
       experience: form.experience.trim(),
-      completion: 20,
-      status: 'Pending',
-      applications: 0,
       employmentPreference: form.employmentPreference,
-      registeredAt: new Date().toISOString(),
       timeAvailability:
         form.employmentPreference === 'Full Time' ? undefined : form.timeAvailability.length ? form.timeAvailability : undefined,
-    })
-    setForm(emptyForm)
-    setOpen(false)
+    }
+    if (editingId) {
+      updateProfessional(editingId, payload)
+    } else {
+      addProfessional({
+        id: `u${Date.now()}`,
+        ...payload,
+        completion: 20,
+        status: 'Pending',
+        applications: 0,
+        registeredAt: new Date().toISOString(),
+      })
+    }
+    closeModal()
   }
 
   return (
@@ -149,7 +163,14 @@ export default function Professionals() {
           <h3>Professionals</h3>
           <p>Users who signed up on the iv mediz mobile app</p>
         </div>
-        <button className="btn btn-primary" onClick={() => setOpen(true)}>
+        <button
+          className="btn btn-primary"
+          onClick={() => {
+            setEditingId(null)
+            setForm(emptyForm)
+            setOpen(true)
+          }}
+        >
           <Plus size={16} />
           Add user
         </button>
@@ -255,6 +276,28 @@ export default function Professionals() {
                 </td>
                 <td>
                   <div style={{ display: 'flex', gap: 6 }}>
+                    <button
+                      className="btn btn-ghost btn-sm"
+                      onClick={() => {
+                        setEditingId(user.id)
+                        setForm({
+                          name: user.name,
+                          email: user.email,
+                          phone: user.phone,
+                          role: user.role,
+                          specialization: user.specialization,
+                          state: user.state,
+                          district: user.district,
+                          experience: user.experience,
+                          employmentPreference: user.employmentPreference,
+                          timeAvailability: user.timeAvailability ?? [],
+                        })
+                        setOpen(true)
+                      }}
+                    >
+                      <Pencil size={14} />
+                      Edit
+                    </button>
                     <button className="btn btn-ghost btn-sm" onClick={() => setSelected(user)}>
                       View
                     </button>
@@ -323,7 +366,7 @@ export default function Professionals() {
       )}
 
       {open && (
-        <Modal title="Add professional" onClose={() => setOpen(false)}>
+        <Modal title={editingId ? 'Edit professional' : 'Add professional'} onClose={closeModal}>
           <form className="form-grid" onSubmit={submit}>
             <div className="field">
               <label>Full name</label>
@@ -423,7 +466,7 @@ export default function Professionals() {
             )}
             <div className="field full">
               <button className="btn btn-primary" type="submit">
-                Add user
+                {editingId ? 'Save changes' : 'Add user'}
               </button>
             </div>
           </form>

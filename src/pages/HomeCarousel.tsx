@@ -1,4 +1,4 @@
-import { Image, Plus, Search, Trash2 } from 'lucide-react'
+import { Image, Pencil, Plus, Search, Trash2 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
 import ActiveToggle from '../components/ActiveToggle'
 import Modal from '../components/Modal'
@@ -23,6 +23,7 @@ export default function HomeCarouselPage() {
   const [error, setError] = useState<string | null>(null)
   const [query, setQuery] = useState('')
   const [open, setOpen] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState(empty)
   const [saving, setSaving] = useState(false)
   const [uploadingImage, setUploadingImage] = useState(false)
@@ -60,6 +61,7 @@ export default function HomeCarouselPage() {
 
   function closeModal() {
     setOpen(false)
+    setEditingId(null)
     setForm(empty)
     setUploadError(null)
   }
@@ -99,15 +101,21 @@ export default function HomeCarouselPage() {
     setSaving(true)
     setError(null)
     try {
-      const created = await adminApi.createHomeCarouselSlide({
+      const payload = {
         title: form.title.trim(),
         subtitle: form.subtitle.trim() || undefined,
         imageUrl: form.imageUrl.trim(),
         actionUrl: form.actionUrl.trim() || undefined,
         sortOrder: Number(form.sortOrder) || 0,
         isActive: form.isActive,
-      })
-      setSlides((prev) => [...prev, created])
+      }
+      if (editingId) {
+        const updated = await adminApi.updateHomeCarouselSlide(editingId, payload)
+        setSlides((prev) => prev.map((s) => (s.id === editingId ? { ...s, ...updated } : s)))
+      } else {
+        const created = await adminApi.createHomeCarouselSlide(payload)
+        setSlides((prev) => [...prev, created])
+      }
       closeModal()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not save slide')
@@ -140,6 +148,7 @@ export default function HomeCarouselPage() {
           className="btn btn-primary"
           type="button"
           onClick={() => {
+            setEditingId(null)
             setForm(empty)
             setUploadError(null)
             setOpen(true)
@@ -210,7 +219,27 @@ export default function HomeCarouselPage() {
                       onChange={(on) => void toggleActive(s, on)}
                     />
                   </td>
-                  <td>
+                  <td className="row-actions">
+                    <button
+                      type="button"
+                      className="btn btn-ghost btn-sm"
+                      onClick={() => {
+                        setEditingId(s.id)
+                        setForm({
+                          title: s.title,
+                          subtitle: s.subtitle ?? '',
+                          imageUrl: s.imageUrl,
+                          actionUrl: s.actionUrl ?? '',
+                          sortOrder: s.sortOrder,
+                          isActive: s.isActive,
+                        })
+                        setUploadError(null)
+                        setOpen(true)
+                      }}
+                    >
+                      <Pencil size={14} />
+                      Edit
+                    </button>
                     <button
                       type="button"
                       className="btn btn-ghost btn-sm"
@@ -227,7 +256,7 @@ export default function HomeCarouselPage() {
       </div>
 
       {open && (
-        <Modal title="Add carousel slide" wide onClose={closeModal}>
+        <Modal title={editingId ? 'Edit carousel slide' : 'Add carousel slide'} wide onClose={closeModal}>
           <form onSubmit={(e) => void submit(e)}>
             <div className="form-grid">
               <div className="field full">

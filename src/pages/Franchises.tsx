@@ -1,4 +1,4 @@
-import { MapPinned, Plus, Search } from 'lucide-react'
+import { MapPinned, Pencil, Plus, Search } from 'lucide-react'
 import { useMemo, useState, type FormEvent } from 'react'
 import LocationFilters from '../components/LocationFilters'
 import Modal from '../components/Modal'
@@ -19,12 +19,13 @@ const empty = {
 }
 
 export default function Franchises() {
-  const { franchises, states, cities, addFranchise, setFranchiseStatus } = useDirectory()
+  const { franchises, states, cities, addFranchise, updateFranchise, setFranchiseStatus } = useDirectory()
   const [query, setQuery] = useState('')
   const [tab, setTab] = useState<(typeof TABS)[number]>('All')
   const [stateFilter, setStateFilter] = useState('All')
   const [districtFilter, setDistrictFilter] = useState('All')
   const [open, setOpen] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState(empty)
 
   const stateCities = useMemo(() => {
@@ -54,12 +55,17 @@ export default function Franchises() {
     }))
   }
 
+  function closeModal() {
+    setOpen(false)
+    setEditingId(null)
+    setForm(empty)
+  }
+
   function submit(e: FormEvent) {
     e.preventDefault()
     const state = states.find((s) => s.id === form.stateId)
     if (!state || form.cities.length === 0) return
-    addFranchise({
-      id: `fr-${Date.now()}`,
+    const payload = {
       name: form.name,
       owner: form.owner,
       email: form.email,
@@ -68,11 +74,18 @@ export default function Franchises() {
       stateName: state.name,
       cities: form.cities,
       commission: form.commission,
-      status: 'Pending',
-      joined: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
-    })
-    setForm(empty)
-    setOpen(false)
+    }
+    if (editingId) {
+      updateFranchise(editingId, payload)
+    } else {
+      addFranchise({
+        id: `fr-${Date.now()}`,
+        ...payload,
+        status: 'Pending',
+        joined: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
+      })
+    }
+    closeModal()
   }
 
   return (
@@ -82,7 +95,14 @@ export default function Franchises() {
           <h3>Franchises</h3>
           <p>Assign franchise partners to manage jobs, ambulances, and operations in specific locations.</p>
         </div>
-        <button className="btn btn-primary" onClick={() => setOpen(true)}>
+        <button
+          className="btn btn-primary"
+          onClick={() => {
+            setEditingId(null)
+            setForm(empty)
+            setOpen(true)
+          }}
+        >
           <Plus size={16} />
           Add franchise
         </button>
@@ -184,7 +204,27 @@ export default function Franchises() {
                     />
                   )}
                 </td>
-                <td>
+                <td className="row-actions">
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-sm"
+                    onClick={() => {
+                      setEditingId(f.id)
+                      setForm({
+                        name: f.name,
+                        owner: f.owner,
+                        email: f.email,
+                        phone: f.phone,
+                        stateId: f.stateId,
+                        cities: [...f.cities],
+                        commission: f.commission,
+                      })
+                      setOpen(true)
+                    }}
+                  >
+                    <Pencil size={14} />
+                    Edit
+                  </button>
                   {f.status === 'Pending' && (
                     <button className="btn btn-ghost btn-sm" onClick={() => setFranchiseStatus(f.id, 'Active')}>
                       Approve
@@ -198,7 +238,7 @@ export default function Franchises() {
       </div>
 
       {open && (
-        <Modal title="Add franchise partner" wide onClose={() => setOpen(false)}>
+        <Modal title={editingId ? 'Edit franchise partner' : 'Add franchise partner'} wide onClose={closeModal}>
           <p className="muted" style={{ marginBottom: 14 }}>
             Franchise partners manage iv mediz operations for selected cities within a state.
           </p>
@@ -256,7 +296,7 @@ export default function Franchises() {
             </div>
             <div className="field full">
               <button className="btn btn-primary" type="submit" disabled={!form.stateId || form.cities.length === 0}>
-                Create franchise
+                {editingId ? 'Save changes' : 'Create franchise'}
               </button>
             </div>
           </form>

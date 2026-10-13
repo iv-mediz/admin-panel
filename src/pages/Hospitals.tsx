@@ -1,4 +1,4 @@
-import { Plus, Search } from 'lucide-react'
+import { Pencil, Plus, Search } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import * as adminApi from '../api/admin'
@@ -18,10 +18,24 @@ const TABS = ['All', 'Partner', 'Pending'] as const
 export default function Hospitals() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { hospitals, setHospitalStatus, setHospitalActive, setHospitals } = useDirectory()
+  const { hospitals, setHospitalStatus, setHospitalActive, setHospitals, updateHospital } = useDirectory()
   const [query, setQuery] = useState('')
   const [brandingHospital, setBrandingHospital] = useState<Hospital | null>(null)
   const [detailHospital, setDetailHospital] = useState<Hospital | null>(null)
+  const [editingHospital, setEditingHospital] = useState<Hospital | null>(null)
+  const [hospitalForm, setHospitalForm] = useState({
+    name: '',
+    type: '',
+    contactPerson: '',
+    contact: '',
+    email: '',
+    address: '',
+    city: '',
+    district: '',
+    state: '',
+    registrationNo: '',
+    notes: '',
+  })
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [tab, setTab] = useState<(typeof TABS)[number]>('All')
@@ -158,6 +172,29 @@ export default function Hospitals() {
                   />
                 </td>
                 <td>
+                  <button
+                    className="btn btn-ghost btn-sm"
+                    type="button"
+                    onClick={() => {
+                      setEditingHospital(h)
+                      setHospitalForm({
+                        name: h.name,
+                        type: h.type ?? '',
+                        contactPerson: h.contactPerson ?? '',
+                        contact: h.contact,
+                        email: h.email ?? '',
+                        address: h.address ?? '',
+                        city: h.city,
+                        district: h.district,
+                        state: h.state,
+                        registrationNo: h.registrationNo ?? '',
+                        notes: h.notes ?? '',
+                      })
+                    }}
+                  >
+                    <Pencil size={14} />
+                    Edit
+                  </button>
                   <button className="btn btn-ghost btn-sm" type="button" onClick={() => setDetailHospital(h)}>
                     Details
                   </button>
@@ -212,6 +249,121 @@ export default function Hospitals() {
             previewUrl={brandingLive.coverPhotoUrl}
             onPick={(file) => void uploadBranding('cover', file)}
           />
+        </Modal>
+      )}
+
+      {editingHospital && (
+        <Modal title={`Edit ${editingHospital.name}`} onClose={() => setEditingHospital(null)}>
+          <form
+            className="form-grid"
+            onSubmit={(e) => {
+              e.preventDefault()
+              updateHospital(editingHospital.id, {
+                name: hospitalForm.name.trim(),
+                type: hospitalForm.type.trim(),
+                contactPerson: hospitalForm.contactPerson.trim(),
+                contact: hospitalForm.contact.trim(),
+                email: hospitalForm.email.trim(),
+                address: hospitalForm.address.trim(),
+                city: hospitalForm.city.trim(),
+                district: hospitalForm.district.trim() || hospitalForm.city.trim(),
+                state: hospitalForm.state.trim(),
+                registrationNo: hospitalForm.registrationNo.trim(),
+                notes: hospitalForm.notes.trim(),
+              })
+              setEditingHospital(null)
+            }}
+          >
+            <div className="field">
+              <label>Hospital name</label>
+              <input
+                value={hospitalForm.name}
+                onChange={(e) => setHospitalForm({ ...hospitalForm, name: e.target.value })}
+                required
+              />
+            </div>
+            <div className="field">
+              <label>Type</label>
+              <input
+                value={hospitalForm.type}
+                onChange={(e) => setHospitalForm({ ...hospitalForm, type: e.target.value })}
+              />
+            </div>
+            <div className="field">
+              <label>Contact person</label>
+              <input
+                value={hospitalForm.contactPerson}
+                onChange={(e) => setHospitalForm({ ...hospitalForm, contactPerson: e.target.value })}
+              />
+            </div>
+            <div className="field">
+              <label>Phone</label>
+              <input
+                value={hospitalForm.contact}
+                onChange={(e) => setHospitalForm({ ...hospitalForm, contact: e.target.value })}
+                required
+              />
+            </div>
+            <div className="field">
+              <label>Email</label>
+              <input
+                type="email"
+                value={hospitalForm.email}
+                onChange={(e) => setHospitalForm({ ...hospitalForm, email: e.target.value })}
+              />
+            </div>
+            <div className="field">
+              <label>Registration no.</label>
+              <input
+                value={hospitalForm.registrationNo}
+                onChange={(e) => setHospitalForm({ ...hospitalForm, registrationNo: e.target.value })}
+              />
+            </div>
+            <div className="field">
+              <label>State</label>
+              <input
+                value={hospitalForm.state}
+                onChange={(e) => setHospitalForm({ ...hospitalForm, state: e.target.value })}
+                required
+              />
+            </div>
+            <div className="field">
+              <label>City</label>
+              <input
+                value={hospitalForm.city}
+                onChange={(e) => setHospitalForm({ ...hospitalForm, city: e.target.value })}
+                required
+              />
+            </div>
+            <div className="field">
+              <label>District</label>
+              <input
+                value={hospitalForm.district}
+                onChange={(e) => setHospitalForm({ ...hospitalForm, district: e.target.value })}
+              />
+            </div>
+            <div className="field full">
+              <label>Address</label>
+              <input
+                value={hospitalForm.address}
+                onChange={(e) => setHospitalForm({ ...hospitalForm, address: e.target.value })}
+              />
+            </div>
+            <div className="field full">
+              <label>Notes</label>
+              <textarea
+                rows={2}
+                value={hospitalForm.notes}
+                onChange={(e) => setHospitalForm({ ...hospitalForm, notes: e.target.value })}
+              />
+            </div>
+            <div className="modal-actions">
+              <button type="button" className="btn btn-outline" onClick={() => setEditingHospital(null)}>
+                Cancel
+              </button>
+              <button className="btn btn-primary">Save changes</button>
+            </div>
+          </form>
         </Modal>
       )}
 

@@ -1,11 +1,17 @@
-import { Crown, Plus, Search } from 'lucide-react'
+import { Crown, Pencil, Plus, Search } from 'lucide-react'
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import LocationFilters from '../components/LocationFilters'
 import Modal from '../components/Modal'
 import StatusChip from '../components/StatusChip'
 import { useDirectory } from '../data/directory'
-import type { EntitySubscription, SubscriptionAudience, SubscriptionBilling, SubscriptionLocationState } from '../types'
+import type {
+  EntitySubscription,
+  SubscriptionAudience,
+  SubscriptionBilling,
+  SubscriptionLocationState,
+  SubscriptionPlan,
+} from '../types'
 import { matchesLocation } from '../utils/locationFilter'
 
 const TABS = ['Subscribers', 'Plans'] as const
@@ -42,11 +48,26 @@ export default function Subscriptions() {
     fleet,
     activateSubscription,
     cancelSubscription,
+    updateSubscriptionPlan,
+    updateUserSubscription,
   } = useDirectory()
   const state = location.state as SubscriptionLocationState | null
   const [tab, setTab] = useState<(typeof TABS)[number]>(state?.plansTab ? 'Plans' : 'Subscribers')
   const [query, setQuery] = useState('')
   const [open, setOpen] = useState(false)
+  const [editingSub, setEditingSub] = useState<EntitySubscription | null>(null)
+  const [editPlanName, setEditPlanName] = useState('')
+  const [editBilling, setEditBilling] = useState<SubscriptionBilling>('Manual')
+  const [editingPlan, setEditingPlan] = useState<SubscriptionPlan | null>(null)
+  const [planForm, setPlanForm] = useState({
+    name: '',
+    audience: 'Employee' as SubscriptionAudience,
+    monthlyPrice: '',
+    yearlyPrice: '',
+    popular: false,
+    active: true,
+    featuresText: '',
+  })
   const [subscriberType, setSubscriberType] = useState<SubscriptionAudience>('Employee')
   const [subscriberId, setSubscriberId] = useState('')
   const [plan, setPlan] = useState('')
@@ -276,7 +297,19 @@ export default function Subscriptions() {
                     <td>
                       <StatusChip label={s.status} />
                     </td>
-                    <td>
+                    <td className="row-actions">
+                      <button
+                        className="btn btn-ghost btn-sm"
+                        type="button"
+                        onClick={() => {
+                          setEditingSub(s)
+                          setEditPlanName(s.plan)
+                          setEditBilling(s.billing)
+                        }}
+                      >
+                        <Pencil size={14} />
+                        Edit
+                      </button>
                       {s.status === 'Active' && (
                         <button
                           className="btn btn-ghost btn-sm"
@@ -316,6 +349,26 @@ export default function Subscriptions() {
                 ))}
               </ul>
               <StatusChip label={p.active ? 'Active' : 'Paused'} />
+              <button
+                type="button"
+                className="btn btn-outline btn-sm"
+                style={{ marginTop: 12 }}
+                onClick={() => {
+                  setEditingPlan(p)
+                  setPlanForm({
+                    name: p.name,
+                    audience: p.audience,
+                    monthlyPrice: p.monthlyPrice,
+                    yearlyPrice: p.yearlyPrice,
+                    popular: !!p.popular,
+                    active: p.active,
+                    featuresText: p.features.join('\n'),
+                  })
+                }}
+              >
+                <Pencil size={14} />
+                Edit plan
+              </button>
             </article>
           ))}
         </div>
@@ -396,6 +449,147 @@ export default function Subscriptions() {
               <button className="btn btn-primary" type="submit" disabled={!subscriberId || !plan}>
                 Activate subscription
               </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {editingSub && (
+        <Modal title={`Edit subscription — ${editingSub.subscriberName}`} onClose={() => setEditingSub(null)}>
+          <form
+            className="form-grid"
+            onSubmit={(e) => {
+              e.preventDefault()
+              updateUserSubscription(editingSub.id, {
+                planName: editPlanName,
+                billing: editBilling,
+              })
+              setEditingSub(null)
+            }}
+          >
+            <div className="field full">
+              <label>Plan</label>
+              <select value={editPlanName} onChange={(e) => setEditPlanName(e.target.value)} required>
+                {subscriptionPlans
+                  .filter((p) => p.audience === editingSub.subscriberType)
+                  .map((p) => (
+                    <option key={p.id} value={p.name}>
+                      {p.name}
+                    </option>
+                  ))}
+              </select>
+            </div>
+            <div className="field full">
+              <label>Billing</label>
+              <select value={editBilling} onChange={(e) => setEditBilling(e.target.value as SubscriptionBilling)}>
+                {BILLING_OPTIONS.map((b) => (
+                  <option key={b} value={b}>
+                    {b}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="modal-actions">
+              <button type="button" className="btn btn-outline" onClick={() => setEditingSub(null)}>
+                Cancel
+              </button>
+              <button className="btn btn-primary">Save changes</button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {editingPlan && (
+        <Modal title="Edit plan" onClose={() => setEditingPlan(null)}>
+          <form
+            className="form-grid"
+            onSubmit={(e) => {
+              e.preventDefault()
+              updateSubscriptionPlan(editingPlan.id, {
+                name: planForm.name.trim(),
+                audience: planForm.audience,
+                monthlyPrice: planForm.monthlyPrice.trim(),
+                yearlyPrice: planForm.yearlyPrice.trim(),
+                popular: planForm.popular,
+                active: planForm.active,
+                features: planForm.featuresText
+                  .split('\n')
+                  .map((f) => f.trim())
+                  .filter(Boolean),
+              })
+              setEditingPlan(null)
+            }}
+          >
+            <div className="field">
+              <label>Plan name</label>
+              <input
+                value={planForm.name}
+                onChange={(e) => setPlanForm({ ...planForm, name: e.target.value })}
+                required
+              />
+            </div>
+            <div className="field">
+              <label>Audience</label>
+              <select
+                value={planForm.audience}
+                onChange={(e) => setPlanForm({ ...planForm, audience: e.target.value as SubscriptionAudience })}
+              >
+                {AUDIENCES.map((a) => (
+                  <option key={a} value={a}>
+                    {a}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="field">
+              <label>Monthly price</label>
+              <input
+                value={planForm.monthlyPrice}
+                onChange={(e) => setPlanForm({ ...planForm, monthlyPrice: e.target.value })}
+                required
+              />
+            </div>
+            <div className="field">
+              <label>Yearly price</label>
+              <input
+                value={planForm.yearlyPrice}
+                onChange={(e) => setPlanForm({ ...planForm, yearlyPrice: e.target.value })}
+                required
+              />
+            </div>
+            <div className="field full">
+              <label>Features (one per line)</label>
+              <textarea
+                rows={5}
+                value={planForm.featuresText}
+                onChange={(e) => setPlanForm({ ...planForm, featuresText: e.target.value })}
+              />
+            </div>
+            <div className="field">
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={planForm.popular}
+                  onChange={(e) => setPlanForm({ ...planForm, popular: e.target.checked })}
+                />
+                Popular
+              </label>
+            </div>
+            <div className="field">
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={planForm.active}
+                  onChange={(e) => setPlanForm({ ...planForm, active: e.target.checked })}
+                />
+                Active
+              </label>
+            </div>
+            <div className="modal-actions">
+              <button type="button" className="btn btn-outline" onClick={() => setEditingPlan(null)}>
+                Cancel
+              </button>
+              <button className="btn btn-primary">Save plan</button>
             </div>
           </form>
         </Modal>

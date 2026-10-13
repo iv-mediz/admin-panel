@@ -1,4 +1,4 @@
-import { Plus, Search } from 'lucide-react'
+import { Pencil, Plus, Search } from 'lucide-react'
 import { useMemo, useState, type FormEvent } from 'react'
 import CityDistrictSelect, { cityDistrictPayload } from '../components/CityDistrictSelect'
 import LocationFilters from '../components/LocationFilters'
@@ -29,12 +29,13 @@ const empty: MemberForm = {
 }
 
 export default function Team() {
-  const { team, addMember, setMemberStatus, states } = useDirectory()
+  const { team, addMember, updateMember, setMemberStatus, states } = useDirectory()
   const [query, setQuery] = useState('')
   const [role, setRole] = useState<(typeof ROLES)[number]>('All')
   const [stateFilter, setStateFilter] = useState('All')
   const [districtFilter, setDistrictFilter] = useState('All')
   const [open, setOpen] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [selected, setSelected] = useState<TeamMember | null>(null)
   const [form, setForm] = useState<MemberForm>(empty)
 
@@ -47,11 +48,16 @@ export default function Team() {
     })
   }, [team, query, role, stateFilter, districtFilter])
 
+  function closeModal() {
+    setOpen(false)
+    setEditingId(null)
+    setForm(empty)
+  }
+
   function submit(e: FormEvent) {
     e.preventDefault()
     const loc = cityDistrictPayload(form.cityDistrict)
-    addMember({
-      id: `t${Date.now()}`,
+    const patch = {
       name: form.name,
       role: form.role,
       email: form.email,
@@ -59,11 +65,18 @@ export default function Team() {
       city: loc.city,
       district: loc.district,
       state: form.state,
-      joined: 'Just now',
-      status: 'Invited',
-    })
-    setForm(empty)
-    setOpen(false)
+    }
+    if (editingId) {
+      updateMember(editingId, patch)
+    } else {
+      addMember({
+        id: `t${Date.now()}`,
+        ...patch,
+        joined: 'Just now',
+        status: 'Invited',
+      })
+    }
+    closeModal()
   }
 
   return (
@@ -73,7 +86,14 @@ export default function Team() {
           <h3>Team</h3>
           <p>Internal iv mediz staff who run jobs, dispatch and hospital onboarding</p>
         </div>
-        <button className="btn btn-primary" onClick={() => setOpen(true)}>
+        <button
+          className="btn btn-primary"
+          onClick={() => {
+            setEditingId(null)
+            setForm(empty)
+            setOpen(true)
+          }}
+        >
           <Plus size={16} />
           Add team member
         </button>
@@ -157,6 +177,24 @@ export default function Team() {
                   />
                 </td>
                 <td className="row-actions">
+                  <button
+                    className="btn btn-ghost btn-sm"
+                    onClick={() => {
+                      setEditingId(m.id)
+                      setForm({
+                        name: m.name,
+                        role: m.role,
+                        email: m.email,
+                        phone: m.phone,
+                        state: m.state,
+                        cityDistrict: m.district || m.city,
+                      })
+                      setOpen(true)
+                    }}
+                  >
+                    <Pencil size={14} />
+                    Edit
+                  </button>
                   <button className="btn btn-ghost btn-sm" onClick={() => setSelected(m)}>
                     View
                   </button>
@@ -169,7 +207,7 @@ export default function Team() {
       </div>
 
       {open && (
-        <Modal title="Add team member" onClose={() => setOpen(false)}>
+        <Modal title={editingId ? 'Edit team member' : 'Add team member'} onClose={closeModal}>
           <form onSubmit={submit}>
             <div className="form-grid">
               <div className="field">
@@ -212,10 +250,10 @@ export default function Team() {
               />
             </div>
             <div className="modal-actions">
-              <button type="button" className="btn btn-outline" onClick={() => setOpen(false)}>
+              <button type="button" className="btn btn-outline" onClick={closeModal}>
                 Cancel
               </button>
-              <button className="btn btn-primary">Send invite</button>
+              <button className="btn btn-primary">{editingId ? 'Save changes' : 'Send invite'}</button>
             </div>
           </form>
         </Modal>
