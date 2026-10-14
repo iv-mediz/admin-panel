@@ -1,5 +1,5 @@
 import { Ambulance, Baby, Camera, HeartPulse, Plus, Search, type LucideIcon } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import LocationFilters from '../components/LocationFilters'
 import { resolveMediaUrl } from '../components/HospitalImageUpload'
@@ -79,10 +79,12 @@ export default function Ambulances() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [assignTarget, setAssignTarget] = useState<Booking | null>(null)
   const [assignFleetId, setAssignFleetId] = useState('')
+  const [assignOnlineFilter, setAssignOnlineFilter] = useState<'All' | 'Online' | 'Offline'>('All')
   const [assignSaving, setAssignSaving] = useState(false)
   const [assignError, setAssignError] = useState<string | null>(null)
   const selected = selectedId ? fleet.find((v) => v.id === selectedId) ?? null : null
-  const notice = (location.state as OnboardLocationState | null)?.justOnboarded
+  const locationState = location.state as OnboardLocationState | null
+  const notice = locationState?.justOnboarded
 
   const filteredFleet = useMemo(() => {
     return fleet.filter((v) => {
@@ -115,11 +117,13 @@ export default function Ambulances() {
     return sortBookingsNewestFirst(filtered)
   }, [bookings, query, tab, stateFilter, districtFilter])
 
-  const fleetForAssign = useMemo(() => {
+  const assignEligibleFleet = useMemo(() => {
     if (!assignTarget) return []
     return fleet
-      .filter((v) => v.status === 'Active')
+      .filter((v) => v.status === 'Active' && v.isActive !== false)
       .sort((a, b) => {
+        const onlineDelta = Number(Boolean(b.isOnline)) - Number(Boolean(a.isOnline))
+        if (onlineDelta !== 0) return onlineDelta
         const sameDistrict =
           (a.district === assignTarget.district ? 0 : 1) -
           (b.district === assignTarget.district ? 0 : 1)
@@ -127,6 +131,15 @@ export default function Ambulances() {
         return a.operator.localeCompare(b.operator)
       })
   }, [fleet, assignTarget])
+
+  const fleetForAssign = useMemo(() => {
+    if (assignOnlineFilter === 'Online') return assignEligibleFleet.filter((v) => v.isOnline)
+    if (assignOnlineFilter === 'Offline') return assignEligibleFleet.filter((v) => !v.isOnline)
+    return assignEligibleFleet
+  }, [assignEligibleFleet, assignOnlineFilter])
+
+  const assignOnlineCount = assignEligibleFleet.filter((v) => v.isOnline).length
+  const assignOfflineCount = assignEligibleFleet.length - assignOnlineCount
 
   async function submitAssignDriver() {
     if (!assignTarget || !assignFleetId) return
@@ -137,6 +150,7 @@ export default function Ambulances() {
       updateBooking(updated)
       setAssignTarget(null)
       setAssignFleetId('')
+      setAssignOnlineFilter('All')
     } catch (e) {
       setAssignError(e instanceof Error ? e.message : 'Could not assign driver')
     } finally {
@@ -147,8 +161,19 @@ export default function Ambulances() {
   function openAssign(booking: Booking) {
     setAssignTarget(booking)
     setAssignFleetId(booking.fleetId ?? '')
+    setAssignOnlineFilter('All')
     setAssignError(null)
   }
+
+  useEffect(() => {
+    const assignId = locationState?.assignBookingId
+    if (!assignId) return
+    const booking = bookings.find((b) => b.id === assignId)
+    if (!booking) return
+    setView('Bookings')
+    openAssign(booking)
+    navigate('.', { replace: true, state: { justOnboarded: notice } })
+  }, [bookings, locationState?.assignBookingId, navigate, notice])
 
   function switchView(next: 'Fleet' | 'Bookings') {
     setView(next)
@@ -537,6 +562,7 @@ export default function Ambulances() {
           onClose={() => {
             setAssignTarget(null)
             setAssignFleetId('')
+            setAssignOnlineFilter('All')
             setAssignError(null)
           }}
         >
@@ -568,22 +594,51 @@ export default function Ambulances() {
           <label htmlFor="assign-fleet" style={{ display: 'block', fontWeight: 700, marginBottom: 6 }}>
             Fleet vehicle
           </label>
+          <div className="pills" style={{ marginBottom: 10 }}>
+            {(
+              [
+                ['All', assignEligibleFleet.length],
+                ['Online', assignOnlineCount],
+                ['Offline', assignOfflineCount],
+              ] as const
+            ).map(([label, count]) => (
+              <button
+                key={label}
+                type="button"
+                className={`pill ${assignOnlineFilter === label ? 'active' : ''}`}
+                onClick={() => {
+                  setAssignOnlineFilter(label)
+                  const stillVisible = assignEligibleFleet.some((v) => {
+                    if (v.id !== assignFleetId) return false
+                    if (label === 'Online') return Boolean(v.isOnline)
+                    if (label === 'Offline') return !v.isOnline
+                    return true
+                  })
+                  if (!stillVisible) setAssignFleetId('')
+                }}
+              >
+                {label} ({count})
+              </button>
+            ))}
+          </div>
           <select
             id="assign-fleet"
             className="select"
             value={assignFleetId}
             onChange={(e) => setAssignFleetId(e.target.value)}
           >
-            <option value="">Select an active vehicle</option>
+            <option value="">Select a vehicle</option>
             {fleetForAssign.map((v) => (
               <option key={v.id} value={v.id}>
-                {v.operator} · {v.vehicle} · {v.driver} ({v.city})
+                {v.isOnline ? 'Online' : 'Offline'} · {v.operator} · {v.vehicle} · {v.driver} ({v.city})
               </option>
             ))}
           </select>
           {fleetForAssign.length === 0 ? (
             <p className="hint" style={{ marginTop: 8 }}>
-              No active fleet vehicles. Approve a vehicle under Fleet first.
+              {assignEligibleFleet.length === 0
+                ? 'No active fleet vehicles. Approve a vehicle under Fleet first.'
+                : `No ${assignOnlineFilter.toLowerCase()} vehicles in this list.`}
             </p>
           ) : null}
           {assignError ? (
@@ -598,6 +653,7 @@ export default function Ambulances() {
               onClick={() => {
                 setAssignTarget(null)
                 setAssignFleetId('')
+                setAssignOnlineFilter('All')
               }}
             >
               Cancel

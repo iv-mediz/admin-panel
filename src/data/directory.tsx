@@ -272,6 +272,13 @@ export function DirectoryProvider({ children }: { children: ReactNode }) {
     void refresh()
   }, [refresh])
 
+  const updateBooking = useCallback((booking: Booking) => {
+    setBookings((prev) => {
+      const next = prev.map((b) => (b.id === booking.id ? { ...b, ...booking } : b))
+      return next.some((b) => b.id === booking.id) ? next : [booking, ...next]
+    })
+  }, [])
+
   const value = useMemo<DirectoryContextValue>(
     () => ({
       loading,
@@ -280,12 +287,7 @@ export function DirectoryProvider({ children }: { children: ReactNode }) {
       jobs,
       applications,
       bookings,
-      updateBooking: (booking) => {
-        setBookings((prev) => {
-          const next = prev.map((b) => (b.id === booking.id ? { ...b, ...booking } : b))
-          return next.some((b) => b.id === booking.id) ? next : [booking, ...next]
-        })
-      },
+      updateBooking,
       notifications,
       hospitals,
       setHospitals,
@@ -618,6 +620,7 @@ export function DirectoryProvider({ children }: { children: ReactNode }) {
       loading,
       error,
       refresh,
+      updateBooking,
       jobs,
       applications,
       bookings,

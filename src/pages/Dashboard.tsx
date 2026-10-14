@@ -58,7 +58,6 @@ export default function Dashboard() {
   const maxVal = Math.max(1, ...chartStats.flatMap((d) => [d.jobs, d.bookings]))
 
   const recentJobs = stats?.recentJobs ?? filteredJobs.slice(0, 4)
-  const recentApplications = stats?.recentApplications ?? filteredApplications.slice(0, 4)
 
   const locationLabel =
     stateFilter === 'All'
@@ -206,27 +205,6 @@ export default function Dashboard() {
                 </div>
               </div>
               <StatusChip label={job.type} />
-            </div>
-          ))}
-        </article>
-
-        <article className="card card-pad">
-          <div className="card-head">
-            <h4>Latest applications</h4>
-            <button className="link" onClick={() => navigate('/applications')}>
-              See all
-            </button>
-          </div>
-          {recentApplications.map((app) => (
-            <div className="list-item" key={app.id}>
-              <div className="avatar">{app.applicant.slice(0, 1)}</div>
-              <div style={{ flex: 1 }}>
-                <div className="cell-title">{app.applicant}</div>
-                <div className="cell-sub">
-                  {app.jobTitle} · {app.hospital}
-                </div>
-              </div>
-              <StatusChip label={app.status} />
             </div>
           ))}
         </article>

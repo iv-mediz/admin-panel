@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { clearSession } from '../auth/session'
+import { useDirectory } from '../data/directory'
+import NewBookingAlert from './NewBookingAlert'
 import type { LucideIcon } from 'lucide-react'
 import {
   Ambulance,
@@ -17,7 +19,6 @@ import {
   Store,
   Stethoscope,
   CreditCard,
-  UserRound,
   Users,
   UsersRound,
   X,
@@ -40,7 +41,6 @@ const NAV: NavGroup[] = [
     items: [
       { to: '/', label: 'Dashboard', icon: LayoutDashboard },
       { to: '/jobs', label: 'Jobs', icon: Briefcase },
-      { to: '/applications', label: 'Applications', icon: UserRound },
       { to: '/professionals', label: 'Professionals', icon: Users },
       { to: '/team', label: 'Team', icon: UsersRound },
     ],
@@ -81,7 +81,6 @@ function pageMeta(path: string): [string, string] {
   const map: Record<string, [string, string]> = {
     '/': ['Dashboard', 'Overview of jobs, applicants and ambulance bookings'],
     '/jobs': ['Healthcare Jobs', 'Post and manage hospital openings'],
-    '/applications': ['Applications', 'Review candidates and update hiring status'],
     '/professionals': ['Professionals', 'Doctors, nurses and allied health users'],
     '/team': ['Team', 'Internal staff who run the iv mediz admin panel'],
     '/states': ['States', 'States where iv mediz is live'],
@@ -99,8 +98,10 @@ function pageMeta(path: string): [string, string] {
 export default function Layout() {
   const location = useLocation()
   const navigate = useNavigate()
+  const { bookings } = useDirectory()
   const [open, setOpen] = useState(false)
   const [title, subtitle] = pageMeta(location.pathname)
+  const newBookingCount = bookings.filter((b) => b.status === 'New').length
 
   return (
     <div className="app-shell">
@@ -160,14 +161,19 @@ export default function Layout() {
             <button className="icon-btn menu-btn" onClick={() => setOpen((v) => !v)} aria-label="Menu">
               {open ? <X size={18} /> : <Menu size={18} />}
             </button>
-            <button className="icon-btn" onClick={() => navigate('/notifications')}>
+            <button
+              className="icon-btn"
+              onClick={() => navigate('/ambulances')}
+              title={newBookingCount > 0 ? `${newBookingCount} new ambulance booking${newBookingCount === 1 ? '' : 's'}` : 'Ambulance bookings'}
+            >
               <Bell size={18} />
-              <span className="badge-dot" />
+              {newBookingCount > 0 ? <span className="badge-dot" /> : null}
             </button>
             <div className="avatar">A</div>
           </div>
         </header>
         <Outlet />
+        <NewBookingAlert />
       </div>
     </div>
   )

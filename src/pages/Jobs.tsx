@@ -10,6 +10,7 @@ import { hasApiBackend } from '../config/api'
 import { useDirectory } from '../data/directory'
 import type { Hospital, Job, JobCategory, JobType } from '../types'
 import { matchesLocation } from '../utils/locationFilter'
+import JobApplicantsModal from './Applications'
 
 const CATEGORIES = ['All', 'Nursing', 'Doctors', 'Allied Health', 'Pharmacy'] as const
 const TYPES = ['All', 'Locum', 'Part Time', 'Full Time'] as const
@@ -33,7 +34,7 @@ interface JobForm {
 const emptyJob: JobForm = {
   title: '',
   hospitalId: '',
-  state: 'Telangana',
+  state: '',
   cityDistrict: '',
   salary: '',
   experience: '',
@@ -47,8 +48,18 @@ const emptyJob: JobForm = {
 }
 
 export default function Jobs() {
-  const { jobs: items, hospitals, states, specialties, setJobs, setJobStatus, loading, error, refresh } =
-    useDirectory()
+  const {
+    jobs: items,
+    applications,
+    hospitals,
+    states,
+    specialties,
+    setJobs,
+    setJobStatus,
+    loading,
+    error,
+    refresh,
+  } = useDirectory()
   const departmentOptions = useMemo(() => {
     const names = specialties
       .filter((s) => s.status === 'Active')
@@ -70,6 +81,7 @@ export default function Jobs() {
   const [open, setOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [selected, setSelected] = useState<Job | null>(null)
+  const [applicantsJob, setApplicantsJob] = useState<Job | null>(null)
   const [form, setForm] = useState<JobForm>(emptyJob)
   const [saving, setSaving] = useState(false)
 
@@ -242,7 +254,9 @@ export default function Jobs() {
                   <StatusChip label={job.type} />
                 </td>
                 <td style={{ fontWeight: 700 }}>{job.salary}</td>
-                <td>{job.applicants}</td>
+                <td>
+                  {applications.filter((a) => a.jobId === job.id).length || job.applicants}
+                </td>
                 <td>
                   <ActiveToggle
                     active={job.status === 'Active'}
@@ -279,6 +293,9 @@ export default function Jobs() {
                   </button>
                   <button className="btn btn-ghost btn-sm" onClick={() => setSelected(job)}>
                     View
+                  </button>
+                  <button className="btn btn-ghost btn-sm" onClick={() => setApplicantsJob(job)}>
+                    View applicants
                   </button>
                 </td>
               </tr>
@@ -331,6 +348,7 @@ export default function Jobs() {
                   }
                   required
                 >
+                  <option value="">Select state</option>
                   {(states.length ? states : [{ id: 'ts', name: 'Telangana' }]).map((s) => (
                     <option key={s.id} value={s.name}>
                       {s.name}
@@ -342,6 +360,7 @@ export default function Jobs() {
                 ) : null}
               </div>
               <CityDistrictSelect
+                label="District"
                 stateName={form.state}
                 value={form.cityDistrict}
                 onChange={(v) => setForm({ ...form, cityDistrict: v })}
@@ -433,6 +452,7 @@ export default function Jobs() {
                   saving ||
                   partnerHospitals.length === 0 ||
                   !form.hospitalId ||
+                  !form.state.trim() ||
                   !form.cityDistrict.trim() ||
                   !form.availability.trim() ||
                   (form.type === 'Locum' && (!form.locumFrom.trim() || !form.locumTo.trim()))
@@ -487,6 +507,10 @@ export default function Jobs() {
           </ul>
         </Modal>
       )}
+
+      {applicantsJob ? (
+        <JobApplicantsModal job={applicantsJob} onClose={() => setApplicantsJob(null)} />
+      ) : null}
     </div>
   )
 }

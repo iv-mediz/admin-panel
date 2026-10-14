@@ -7,6 +7,7 @@ interface CityDistrictSelectProps {
   onChange: (cityDistrict: string) => void
   required?: boolean
   className?: string
+  label?: string
 }
 
 /** Single city/district picker backed by locations/cities from the API (via directory). */
@@ -16,6 +17,7 @@ export default function CityDistrictSelect({
   onChange,
   required = true,
   className,
+  label = 'District',
 }: CityDistrictSelectProps) {
   const { cities } = useDirectory()
 
@@ -28,7 +30,7 @@ export default function CityDistrictSelect({
 
   return (
     <div className={className ?? 'field'}>
-      <label>City / district</label>
+      <label>{label}</label>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -40,7 +42,7 @@ export default function CityDistrictSelect({
             ? 'Select state first'
             : options.length === 0
               ? 'No cities loaded'
-              : 'Select city / district'}
+              : 'Select district'}
         </option>
         {options.map((name) => (
           <option key={name} value={name}>

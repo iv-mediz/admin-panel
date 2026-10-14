@@ -127,6 +127,7 @@ export interface AmbulanceVehicle {
   base: string
   status: VehicleStatus
   isActive?: boolean
+  isOnline?: boolean
   vehiclePhotos?: VehiclePhoto[]
   email?: string
   subscriptionPlan?: SubscriptionPlanName
@@ -296,4 +297,5 @@ export interface Specialty {
 
 export interface OnboardLocationState {
   justOnboarded?: string
+  assignBookingId?: string
 }

@@ -7,7 +7,6 @@ import Layout from './components/Layout'
 import { DirectoryProvider } from './data/directory'
 import { hasApiBackend } from './config/api'
 import Ambulances from './pages/Ambulances'
-import Applications from './pages/Applications'
 import Dashboard from './pages/Dashboard'
 import Hospitals from './pages/Hospitals'
 import Jobs from './pages/Jobs'
@@ -76,7 +75,7 @@ export default function App() {
       >
         <Route path="/" element={<Dashboard />} />
         <Route path="/jobs" element={<Jobs />} />
-        <Route path="/applications" element={<Applications />} />
+        <Route path="/applications" element={<Navigate to="/jobs" replace />} />
         <Route path="/professionals" element={<Professionals />} />
         <Route path="/team" element={<Team />} />
         <Route path="/hospitals" element={<Hospitals />} />
