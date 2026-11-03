@@ -15,8 +15,11 @@ import JobApplicantsModal from './Applications'
 const CATEGORIES = ['All', 'Nursing', 'Doctors', 'Allied Health', 'Pharmacy'] as const
 const TYPES = ['All', 'Locum', 'Part Time', 'Full Time'] as const
 
+const OTHER_SPECIALITY = 'Other'
+
 interface JobForm {
   title: string
+  specialitySelect: string
   hospitalId: string
   state: string
   cityDistrict: string
@@ -33,6 +36,7 @@ interface JobForm {
 
 const emptyJob: JobForm = {
   title: '',
+  specialitySelect: '',
   hospitalId: '',
   state: '',
   cityDistrict: '',
@@ -123,8 +127,13 @@ export default function Jobs() {
 
     const district = form.cityDistrict.trim() || hospital.district || hospital.city
     const stateName = form.state.trim() || hospital.state
+    const speciality =
+      form.specialitySelect === OTHER_SPECIALITY
+        ? form.title.trim()
+        : form.specialitySelect.trim()
+    if (!speciality) return
     const payload: Partial<Job> = {
-      title: form.title,
+      title: speciality,
       hospitalId: form.hospitalId,
       hospital: hospital.name,
       location: `${district}, ${stateName}`,
@@ -134,7 +143,7 @@ export default function Jobs() {
       experience: form.experience,
       type: form.type,
       category: form.category,
-      department: form.department,
+      department: speciality,
       availability: form.availability,
       ...(form.type === 'Locum'
         ? { locumFrom: form.locumFrom.trim(), locumTo: form.locumTo.trim() }
@@ -197,7 +206,7 @@ export default function Jobs() {
         <div className="search">
           <Search size={16} color="#98A2B3" />
           <input
-            placeholder="Search job title, skill or hospital"
+            placeholder="Search speciality, skill or hospital"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
@@ -228,7 +237,7 @@ export default function Jobs() {
         <table>
           <thead>
             <tr>
-              <th>Role</th>
+              <th>Speciality</th>
               <th>Hospital</th>
               <th>Type</th>
               <th>Salary</th>
@@ -272,6 +281,9 @@ export default function Jobs() {
                       setEditingId(job.id)
                       setForm({
                         title: job.title,
+                        specialitySelect: departmentOptions.includes(job.title)
+                          ? job.title
+                          : OTHER_SPECIALITY,
                         hospitalId: job.hospitalId ?? partnerHospitals.find((h) => h.name === job.hospital)?.id ?? '',
                         state: job.state,
                         cityDistrict: job.district,
@@ -320,7 +332,38 @@ export default function Jobs() {
               </p>
             ) : null}
             <div className="form-grid">
-              <Field label="Job title" value={form.title} onChange={(v) => setForm({ ...form, title: v })} />
+              <div className="field">
+                <label>Speciality</label>
+                <select
+                  required
+                  value={form.specialitySelect}
+                  onChange={(e) => {
+                    const v = e.target.value
+                    setForm({
+                      ...form,
+                      specialitySelect: v,
+                      title: v === OTHER_SPECIALITY ? '' : v,
+                      department: v === OTHER_SPECIALITY ? form.department : v,
+                    })
+                  }}
+                >
+                  <option value="">Select speciality…</option>
+                  {departmentOptions.map((d) => (
+                    <option key={d} value={d}>
+                      {d}
+                    </option>
+                  ))}
+                  <option value={OTHER_SPECIALITY}>{OTHER_SPECIALITY}</option>
+                </select>
+                <span className="hint">Managed under Specialties in the admin panel</span>
+              </div>
+              {form.specialitySelect === OTHER_SPECIALITY ? (
+                <Field
+                  label="Enter speciality"
+                  value={form.title}
+                  onChange={(v) => setForm({ ...form, title: v, department: v })}
+                />
+              ) : null}
               <div className="field">
                 <label>Hospital (partner)</label>
                 <select
@@ -367,22 +410,6 @@ export default function Jobs() {
               />
               <Field label="Salary" value={form.salary} onChange={(v) => setForm({ ...form, salary: v })} />
               <Field label="Experience" value={form.experience} onChange={(v) => setForm({ ...form, experience: v })} />
-              <div className="field">
-                <label>Department</label>
-                <select
-                  required
-                  value={form.department}
-                  onChange={(e) => setForm({ ...form, department: e.target.value })}
-                >
-                  <option value="">Select department…</option>
-                  {departmentOptions.map((d) => (
-                    <option key={d} value={d}>
-                      {d}
-                    </option>
-                  ))}
-                </select>
-                <span className="hint">Manage options under Locations → Specialties</span>
-              </div>
               <div className="field">
                 <label>Job type</label>
                 <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value as JobType })}>

@@ -82,8 +82,8 @@ export default function Specialties() {
         <div>
           <h3>Specialties</h3>
           <p>
-            Home “Explore specialties” chips, job departments, profile specialization dropdowns on
-            mobile, and admin job/professional forms
+            These names appear as the Speciality dropdown when posting a job (plus Other for a
+            custom value), on home specialty chips, and in profile specialization lists.
           </p>
         </div>
         <button
