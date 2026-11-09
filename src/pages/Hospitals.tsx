@@ -131,6 +131,7 @@ export default function Hospitals() {
               <th>City</th>
               <th>Contact</th>
               <th>Applied</th>
+              <th>Rating</th>
               <th>Status</th>
               <th>On app</th>
               <th />
@@ -139,7 +140,7 @@ export default function Hospitals() {
           <tbody>
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={7} style={{ textAlign: 'center', padding: '32px 16px', color: '#667085' }}>
+                <td colSpan={8} style={{ textAlign: 'center', padding: '32px 16px', color: '#667085' }}>
                   No hospitals yet. Use &quot;Onboard hospital&quot; to add your first partner.
                 </td>
               </tr>
@@ -160,6 +161,16 @@ export default function Hospitals() {
                   {h.email ? <div className="cell-sub">{h.email}</div> : null}
                 </td>
                 <td>{formatApplied(h.createdAt)}</td>
+                <td>
+                  {h.ratingCount ? (
+                    <>
+                      <div className="cell-title">⭐ {h.rating.toFixed(1)}</div>
+                      <div className="cell-sub">{h.ratingCount} reviews</div>
+                    </>
+                  ) : (
+                    <span className="muted">No reviews</span>
+                  )}
+                </td>
                 <td>
                   <StatusChip label={h.status} />
                 </td>

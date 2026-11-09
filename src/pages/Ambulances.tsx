@@ -337,6 +337,7 @@ export default function Ambulances() {
                 <th>Base</th>
                 <th>Applied</th>
                 <th>Photos</th>
+                <th>Rating</th>
                 <th>Status</th>
                 <th>On app</th>
                 <th />
@@ -364,6 +365,16 @@ export default function Ambulances() {
                       <span className="tag">{v.vehiclePhotos!.length} uploaded</span>
                     ) : (
                       <span className="muted">None</span>
+                    )}
+                  </td>
+                  <td>
+                    {v.ratingCount ? (
+                      <>
+                        <div className="cell-title">⭐ {Number(v.rating ?? 0).toFixed(1)}</div>
+                        <div className="cell-sub">{v.ratingCount} reviews</div>
+                      </>
+                    ) : (
+                      <span className="muted">No reviews</span>
                     )}
                   </td>
                   <td>

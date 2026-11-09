@@ -214,6 +214,7 @@ export default function Professionals() {
               <th>Location</th>
               <th>Looking for</th>
               <th>Registered</th>
+              <th>Rating</th>
               <th>Profile</th>
               <th>Subscription</th>
               <th>Status</th>
@@ -248,6 +249,16 @@ export default function Professionals() {
                 </td>
                 <td className="muted" style={{ whiteSpace: 'nowrap' }}>
                   {formatRegisteredAt(user.registeredAt)}
+                </td>
+                <td>
+                  {user.ratingCount ? (
+                    <>
+                      <div className="cell-title">⭐ {Number(user.rating ?? 0).toFixed(1)}</div>
+                      <div className="cell-sub">{user.ratingCount} reviews</div>
+                    </>
+                  ) : (
+                    <span className="muted">No reviews</span>
+                  )}
                 </td>
                 <td>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>

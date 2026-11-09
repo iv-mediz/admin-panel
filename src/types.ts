@@ -14,6 +14,25 @@ export type BookingStatus = 'New' | 'On the way' | 'Assigned' | 'Completed' | 'C
 export type TeamRole = 'Super Admin' | 'Recruiter' | 'Dispatch' | 'Support' | 'Hospital Relations' | 'Operations'
 export type TeamStatus = 'Active' | 'Invited'
 export type NotificationType = 'ambulance' | 'job' | 'profile' | 'hospital'
+export type ReviewTargetType = 'ambulance' | 'hospital' | 'employee'
+export type ReviewStatus = 'published' | 'hidden' | 'removed'
+
+export interface Review {
+  id: string
+  rating: number
+  comment: string
+  reviewerName: string
+  reviewerUserId?: string
+  reviewerRole?: string
+  targetType: ReviewTargetType
+  targetId: string
+  targetName: string
+  sourceType?: string
+  sourceId?: string
+  status: ReviewStatus
+  createdAt: string
+  updatedAt?: string
+}
 
 export interface Job {
   id: string
@@ -35,6 +54,7 @@ export interface Job {
   status: JobStatus
   applicants: number
   rating: number
+  ratingCount?: number
   description: string
   responsibilities: string[]
   tags: string[]
@@ -81,6 +101,8 @@ export interface Professional {
   completion: number
   status: 'Active' | 'Pending'
   applications: number
+  rating?: number
+  ratingCount?: number
   employmentPreference: JobType
   timeAvailability?: string[]
   subscriptionPlan?: SubscriptionPlanName
@@ -96,6 +118,7 @@ export interface Hospital {
   state: string
   jobs: number
   rating: number
+  ratingCount?: number
   contact: string
   status: HospitalStatus
   /** Visible on mobile when partner is approved; defaults to true. */
@@ -135,6 +158,8 @@ export interface AmbulanceVehicle {
   license?: string
   notes?: string
   createdAt?: string
+  rating?: number
+  ratingCount?: number
 }
 
 export interface Booking {

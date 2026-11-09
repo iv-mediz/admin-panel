@@ -16,6 +16,7 @@ import {
   MapPinned,
   Menu,
   Settings,
+  Star,
   Store,
   Stethoscope,
   CreditCard,
@@ -65,6 +66,7 @@ const NAV: NavGroup[] = [
     label: 'More',
     items: [
       { to: '/subscriptions', label: 'Subscriptions', icon: CreditCard },
+      { to: '/reviews', label: 'Ratings & reviews', icon: Star },
       { to: '/notifications', label: 'Notifications', icon: Bell },
       { to: '/home-carousel', label: 'Home carousel', icon: Images },
       { to: '/settings', label: 'Settings', icon: Settings },
@@ -88,6 +90,7 @@ function pageMeta(path: string): [string, string] {
     '/specialties': ['Specialties', 'Job specialties shown on the mobile home screen'],
     '/franchises': ['Franchises', 'Partners who manage iv mediz in assigned locations'],
     '/subscriptions': ['Subscriptions', 'Plans and manual activation for mobile users'],
+    '/reviews': ['Ratings & reviews', 'Moderate hospital, ambulance, and employee feedback'],
     '/notifications': ['Notifications', 'Alerts sent to the mobile app'],
     '/home-carousel': ['Home carousel', 'Banners on the employee app home screen'],
     '/settings': ['Settings', 'Admin panel and brand preferences'],

@@ -24,6 +24,7 @@ import CreatePlan from './pages/CreatePlan'
 import Subscriptions from './pages/Subscriptions'
 import Team from './pages/Team'
 import HomeCarouselPage from './pages/HomeCarousel'
+import Reviews from './pages/Reviews'
 import { clearSession, isAuthenticated } from './auth/session'
 
 function Protected({ children }: { children: ReactNode }) {
@@ -90,6 +91,7 @@ export default function App() {
         <Route path="/subscriptions/plans/create" element={<CreatePlan />} />
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/home-carousel" element={<HomeCarouselPage />} />
+        <Route path="/reviews" element={<Reviews />} />
         <Route path="/settings" element={<Settings />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

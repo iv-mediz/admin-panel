@@ -14,6 +14,8 @@ import type {
   TeamMember,
   Specialty,
   AmbulanceServiceTypeConfig,
+  Review,
+  ReviewStatus,
 } from '../types'
 import { apiUrl, hasApiBackend } from '../config/api'
 import { getAccessToken } from '../auth/session'
@@ -395,6 +397,19 @@ export async function activateSubscription(body: {
 
 export async function cancelSubscription(id: string) {
   return apiRequest<EntitySubscription>(`subscriptions/${id}/cancel`, { method: 'PATCH' })
+}
+
+export async function fetchReviews(query: { targetType?: string; status?: string; q?: string } = {}) {
+  return apiRequest<Review[]>(
+    `reviews/admin${qs({ targetType: query.targetType, status: query.status, q: query.q })}`,
+  )
+}
+
+export async function updateReviewStatus(id: string, status: ReviewStatus) {
+  return apiRequest<Review>(`reviews/admin/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status }),
+  })
 }
 
 export async function fetchNotifications() {
