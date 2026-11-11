@@ -108,6 +108,14 @@ export interface Professional {
   subscriptionPlan?: SubscriptionPlanName
   subscriptionStatus?: SubscriptionStatus
   registeredAt?: string
+  documents?: {
+    id: string
+    name: string
+    uploaded?: boolean
+    fileUrl?: string
+    fileName?: string
+    detail?: string
+  }[]
 }
 
 export interface Hospital {

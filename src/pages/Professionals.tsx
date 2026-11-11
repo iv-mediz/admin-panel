@@ -1,9 +1,11 @@
 import { Pencil, Plus, Search, Trash2 } from 'lucide-react'
-import { useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import LocationFilters from '../components/LocationFilters'
 import Modal from '../components/Modal'
 import ActiveToggle from '../components/ActiveToggle'
 import StatusChip from '../components/StatusChip'
+import { resolveMediaUrl } from '../components/HospitalImageUpload'
+import * as adminApi from '../api/admin'
 import { useDirectory } from '../data/directory'
 import type { JobType, Professional } from '../types'
 import { matchesLocation } from '../utils/locationFilter'
@@ -87,6 +89,8 @@ export default function Professionals() {
   const [stateFilter, setStateFilter] = useState('All')
   const [districtFilter, setDistrictFilter] = useState('All')
   const [selected, setSelected] = useState<Professional | null>(null)
+  const [selectedDocs, setSelectedDocs] = useState<NonNullable<Professional['documents']>>([])
+  const [docsLoading, setDocsLoading] = useState(false)
   const [open, setOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Professional | null>(null)
@@ -104,6 +108,31 @@ export default function Professionals() {
       })
       .sort((a, b) => registeredAtMillis(b.registeredAt) - registeredAtMillis(a.registeredAt))
   }, [professionals, query, role, employment, stateFilter, districtFilter])
+
+  useEffect(() => {
+    if (!selected) {
+      setSelectedDocs([])
+      return
+    }
+    const existing = selected.documents ?? []
+    setSelectedDocs(existing)
+    let cancelled = false
+    setDocsLoading(true)
+    adminApi
+      .fetchProfessionalDocuments(selected.id)
+      .then((res) => {
+        if (!cancelled && res.documents?.length) setSelectedDocs(res.documents)
+      })
+      .catch(() => {
+        if (!cancelled) setSelectedDocs(existing)
+      })
+      .finally(() => {
+        if (!cancelled) setDocsLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [selected])
 
   function setField<K extends keyof UserForm>(key: K, value: UserForm[K]) {
     setForm((prev) => ({ ...prev, [key]: value }))
@@ -216,6 +245,7 @@ export default function Professionals() {
               <th>Registered</th>
               <th>Rating</th>
               <th>Profile</th>
+              <th>Documents</th>
               <th>Subscription</th>
               <th>Status</th>
               <th />
@@ -267,6 +297,12 @@ export default function Professionals() {
                     </div>
                     <span className="muted">{user.completion}%</span>
                   </div>
+                </td>
+                <td>
+                  <ProfessionalDocumentsCell
+                    documents={user.documents}
+                    onView={() => setSelected(user)}
+                  />
                 </td>
                 <td>
                   {user.subscriptionPlan ? (
@@ -369,6 +405,14 @@ export default function Professionals() {
                 ))}
               </div>
             </>
+          )}
+          <p className="muted" style={{ marginTop: 14, marginBottom: 8 }}>
+            Profile documents
+          </p>
+          {docsLoading && selectedDocs.length === 0 ? (
+            <p className="muted">Loading documents…</p>
+          ) : (
+            <ProfessionalDocumentsList documents={selectedDocs} />
           )}
           <p className="muted" style={{ marginTop: 14 }}>
             Profile completion {selected.completion}% — same sections as Complete Profile in the app.
@@ -507,6 +551,58 @@ export default function Professionals() {
           </div>
         </Modal>
       )}
+    </div>
+  )
+}
+
+function uploadedCount(documents?: Professional['documents']) {
+  return (documents ?? []).filter((doc) => doc.uploaded || doc.fileUrl).length
+}
+
+function ProfessionalDocumentsCell({
+  documents,
+  onView,
+}: {
+  documents?: Professional['documents']
+  onView: () => void
+}) {
+  const total = documents?.length ?? 4
+  const uploaded = uploadedCount(documents)
+  return (
+    <button className="btn btn-ghost btn-sm" onClick={onView} type="button">
+      {uploaded}/{total} uploaded
+    </button>
+  )
+}
+
+function ProfessionalDocumentsList({ documents }: { documents?: Professional['documents'] }) {
+  const docs = documents?.length
+    ? documents
+    : [
+        { id: 'resume', name: 'Resume' },
+        { id: 'council', name: 'Medical Council Registration Certificate' },
+        { id: 'aadhaar', name: 'Aadhaar Card' },
+        { id: 'expLetter', name: 'Experience Letter' },
+      ]
+  return (
+    <div className="detail-grid">
+      {docs.map((doc) => {
+        const href = resolveMediaUrl(doc.fileUrl)
+        return (
+          <div className="meta full" key={doc.id}>
+            <span>{doc.name}</span>
+            <strong>
+              {href ? (
+                <a href={href} target="_blank" rel="noreferrer">
+                  View{doc.fileName ? ` (${doc.fileName})` : ''}
+                </a>
+              ) : (
+                <span className="muted">{doc.detail || 'Not uploaded'}</span>
+              )}
+            </strong>
+          </div>
+        )
+      })}
     </div>
   )
 }
