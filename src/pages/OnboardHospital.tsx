@@ -1,6 +1,10 @@
 import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
+import * as adminApi from '../api/admin'
+import CityDistrictSelect, { cityDistrictPayload } from '../components/CityDistrictSelect'
+import HospitalImageUpload from '../components/HospitalImageUpload'
 import { useDirectory } from '../data/directory'
+import { hasApiBackend } from '../config/api'
 
 const STEPS = ['Hospital', 'Contact', 'Review'] as const
 const DEPARTMENTS = ['Nursing', 'Doctors', 'Allied Health', 'Pharmacy', 'Critical Care', 'Cardiology'] as const
@@ -10,8 +14,7 @@ interface HospitalForm {
   type: string
   registration: string
   address: string
-  city: string
-  district: string
+  cityDistrict: string
   state: string
   contactPerson: string
   phone: string
@@ -25,8 +28,7 @@ const empty: HospitalForm = {
   type: 'Multi-speciality',
   registration: '',
   address: '',
-  city: '',
-  district: '',
+  cityDistrict: '',
   state: 'Telangana',
   contactPerson: '',
   phone: '',
@@ -37,9 +39,12 @@ const empty: HospitalForm = {
 
 export default function OnboardHospital() {
   const navigate = useNavigate()
-  const { addHospital } = useDirectory()
+  const { addHospital, prependHospital, states } = useDirectory()
   const [step, setStep] = useState(0)
   const [form, setForm] = useState<HospitalForm>(empty)
+  const [logoFile, setLogoFile] = useState<File | null>(null)
+  const [coverFile, setCoverFile] = useState<File | null>(null)
+  const [submitting, setSubmitting] = useState(false)
 
   function setField<K extends keyof HospitalForm>(key: K, value: HospitalForm[K]) {
     setForm((prev) => ({ ...prev, [key]: value }))
@@ -54,27 +59,52 @@ export default function OnboardHospital() {
     }))
   }
 
-  function next(e: FormEvent) {
+  async function next(e: FormEvent) {
     e.preventDefault()
     if (step < 2) {
       setStep(step + 1)
       return
     }
-    addHospital({
-      id: `h${Date.now()}`,
+    const loc = cityDistrictPayload(form.cityDistrict)
+    const payload = {
       name: form.name,
       type: form.type,
-      city: form.city,
+      city: loc.city,
+      district: loc.district,
       state: form.state,
       jobs: 0,
       rating: 0,
       contact: form.phone,
       contactPerson: form.contactPerson,
       email: form.email,
-      status: 'Pending',
+      status: 'Pending' as const,
       departments: form.departments,
-    })
-    navigate('/hospitals', { replace: true, state: { justOnboarded: form.name } })
+      address: form.address,
+      registrationNo: form.registration,
+      notes: form.notes,
+    }
+    setSubmitting(true)
+    try {
+      if (hasApiBackend()) {
+        let created = await adminApi.createHospital(payload)
+        let logoUrl = created.logoUrl
+        let coverPhotoUrl = created.coverPhotoUrl
+        if (logoFile) {
+          const r = await adminApi.uploadHospitalImage(created.id, 'logo', logoFile)
+          logoUrl = r.url
+        }
+        if (coverFile) {
+          const r = await adminApi.uploadHospitalImage(created.id, 'cover', coverFile)
+          coverPhotoUrl = r.url
+        }
+        prependHospital({ ...created, ...payload, logoUrl, coverPhotoUrl })
+      } else {
+        addHospital({ ...payload, id: `h${Date.now()}` })
+      }
+      navigate('/hospitals', { replace: true, state: { justOnboarded: form.name } })
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -113,15 +143,40 @@ export default function OnboardHospital() {
             </div>
             <Field label="Registration / NABH no." value={form.registration} onChange={(v) => setField('registration', v)} optional />
             <Field label="Street address" value={form.address} onChange={(v) => setField('address', v)} />
-            <Field label="City" value={form.city} onChange={(v) => setField('city', v)} />
-            <Field label="District" value={form.district} onChange={(v) => setField('district', v)} />
             <div className="field">
               <label>State</label>
-              <select value={form.state} onChange={(e) => setField('state', e.target.value)}>
-                <option>Telangana</option>
-                <option>Karnataka</option>
+              <select
+                value={form.state}
+                onChange={(e) => {
+                  setForm((prev) => ({ ...prev, state: e.target.value, cityDistrict: '' }))
+                }}
+              >
+                {(states.length ? states : [{ id: 'ts', name: 'Telangana' }, { id: 'ka', name: 'Karnataka' }]).map(
+                  (s) => (
+                    <option key={s.id} value={s.name}>
+                      {s.name}
+                    </option>
+                  ),
+                )}
               </select>
             </div>
+            <CityDistrictSelect
+              stateName={form.state}
+              value={form.cityDistrict}
+              onChange={(v) => setField('cityDistrict', v)}
+            />
+            <HospitalImageUpload
+              label="Hospital logo"
+              kind="logo"
+              onPick={setLogoFile}
+              hint="Square logo shown in the app (JPEG, PNG, or WebP, max 5 MB)."
+            />
+            <HospitalImageUpload
+              label="Cover photo"
+              kind="cover"
+              onPick={setCoverFile}
+              hint="Wide banner for job listings and hospital profile."
+            />
           </div>
         )}
 
@@ -156,11 +211,12 @@ export default function OnboardHospital() {
           <div>
             <p className="muted" style={{ marginBottom: 14 }}>
               Confirm details. The hospital stays <strong>Pending</strong> until you approve it from Hospitals.
+              The contact phone ({form.phone || '—'}) can sign in on the mobile app with OTP to manage jobs once linked.
             </p>
             <div className="detail-grid">
               <Meta label="Hospital" value={form.name} />
               <Meta label="Type" value={form.type} />
-              <Meta label="Location" value={`${form.city}, ${form.state}`} />
+              <Meta label="Location" value={`${form.cityDistrict}, ${form.state}`} />
               <Meta label="Contact" value={form.contactPerson} />
               <Meta label="Phone" value={form.phone} />
               <Meta label="Email" value={form.email} />
@@ -181,7 +237,9 @@ export default function OnboardHospital() {
               Back
             </button>
           )}
-          <button className="btn btn-primary">{step === 2 ? 'Submit for review' : 'Continue'}</button>
+          <button className="btn btn-primary" disabled={submitting}>
+            {submitting ? 'Submitting…' : step === 2 ? 'Submit for review' : 'Continue'}
+          </button>
         </div>
       </form>
     </div>

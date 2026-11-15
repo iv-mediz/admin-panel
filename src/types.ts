@@ -6,18 +6,39 @@ export type ApplicationStatus =
   | 'Shortlisted'
   | 'Interview Scheduled'
   | 'Offer'
+  | 'Recruited'
   | 'Rejected'
 export type HospitalStatus = 'Partner' | 'Pending'
 export type VehicleStatus = 'Active' | 'Pending'
-export type BookingStatus = 'On the way' | 'Assigned' | 'Completed' | 'Cancelled'
+export type BookingStatus = 'New' | 'On the way' | 'Assigned' | 'Completed' | 'Cancelled'
 export type TeamRole = 'Super Admin' | 'Recruiter' | 'Dispatch' | 'Support' | 'Hospital Relations' | 'Operations'
 export type TeamStatus = 'Active' | 'Invited'
 export type NotificationType = 'ambulance' | 'job' | 'profile' | 'hospital'
+export type ReviewTargetType = 'ambulance' | 'hospital' | 'employee'
+export type ReviewStatus = 'published' | 'hidden' | 'removed'
+
+export interface Review {
+  id: string
+  rating: number
+  comment: string
+  reviewerName: string
+  reviewerUserId?: string
+  reviewerRole?: string
+  targetType: ReviewTargetType
+  targetId: string
+  targetName: string
+  sourceType?: string
+  sourceId?: string
+  status: ReviewStatus
+  createdAt: string
+  updatedAt?: string
+}
 
 export interface Job {
   id: string
   title: string
   hospital: string
+  hospitalId?: string
   location: string
   state: string
   district: string
@@ -27,10 +48,13 @@ export interface Job {
   category: JobCategory
   department: string
   availability: string
+  locumFrom?: string
+  locumTo?: string
   posted: string
   status: JobStatus
   applicants: number
   rating: number
+  ratingCount?: number
   description: string
   responsibilities: string[]
   tags: string[]
@@ -44,40 +68,81 @@ export interface Application {
   applicant: string
   role: string
   location: string
+  state: string
+  district: string
   appliedOn: string
   status: ApplicationStatus
   experience: string
   phone: string
   email: string
+  employmentPreference: JobType
+  timeAvailability?: string[]
+  resumeUrl?: string
+  documents?: {
+    id: string
+    name: string
+    fileUrl?: string
+    fileName?: string
+  }[]
 }
 
 export interface Professional {
   id: string
+  userId?: string
   name: string
   role: string
   specialization: string
   location: string
+  state: string
+  district: string
   phone: string
   email: string
   experience: string
   completion: number
   status: 'Active' | 'Pending'
   applications: number
+  rating?: number
+  ratingCount?: number
+  employmentPreference: JobType
+  timeAvailability?: string[]
+  subscriptionPlan?: SubscriptionPlanName
+  subscriptionStatus?: SubscriptionStatus
+  registeredAt?: string
+  documents?: {
+    id: string
+    name: string
+    uploaded?: boolean
+    fileUrl?: string
+    fileName?: string
+    detail?: string
+  }[]
 }
 
 export interface Hospital {
   id: string
   name: string
   city: string
+  district: string
   state: string
   jobs: number
   rating: number
+  ratingCount?: number
   contact: string
   status: HospitalStatus
+  /** Visible on mobile when partner is approved; defaults to true. */
+  isActive?: boolean
   type?: string
   contactPerson?: string
   email?: string
   departments?: string[]
+  subscriptionPlan?: SubscriptionPlanName
+  subscriptionStatus?: SubscriptionStatus
+  logoUrl?: string
+  coverPhotoUrl?: string
+  address?: string
+  registrationNo?: string
+  notes?: string
+  createdAt?: string
 }
 
 export interface AmbulanceVehicle {
@@ -88,8 +153,21 @@ export interface AmbulanceVehicle {
   driver: string
   phone: string
   city: string
+  district: string
+  state: string
   base: string
   status: VehicleStatus
+  isActive?: boolean
+  isOnline?: boolean
+  vehiclePhotos?: VehiclePhoto[]
+  email?: string
+  subscriptionPlan?: SubscriptionPlanName
+  subscriptionStatus?: SubscriptionStatus
+  license?: string
+  notes?: string
+  createdAt?: string
+  rating?: number
+  ratingCount?: number
 }
 
 export interface Booking {
@@ -103,6 +181,16 @@ export interface Booking {
   patientName: string
   driver: string
   vehicle: string
+  state: string
+  district: string
+  fleetId?: string
+  consumerUserId?: string
+  contactPhone?: string
+  notes?: string
+  paymentMethod?: string
+  bookedByName?: string
+  bookedByPhone?: string
+  bookedByEmail?: string
 }
 
 export interface AmbulanceService {
@@ -111,6 +199,16 @@ export interface AmbulanceService {
   subtitle: string
   bookings: number
   fareFrom: string
+}
+
+export interface AmbulanceServiceTypeConfig {
+  id: 'bls' | 'als' | 'neo' | string
+  title: string
+  subtitle: string
+  basePrice: number
+  farePerKm: number
+  sortOrder?: number
+  status?: string
 }
 
 export interface AppNotification {
@@ -129,6 +227,8 @@ export interface TeamMember {
   email: string
   phone: string
   city: string
+  district: string
+  state: string
   joined: string
   status: TeamStatus
 }
@@ -140,6 +240,66 @@ export interface WeeklyStat {
 }
 
 export type LocationStatus = 'Active' | 'Paused' | 'Pending'
+export type SubscriptionPlanName = string
+export type SubscriptionStatus = 'Active' | 'Expired' | 'None' | 'Cancelled'
+export type SubscriptionBilling = 'Monthly' | 'Yearly' | 'Manual'
+export type SubscriptionAudience = 'Employee' | 'Hospital' | 'Ambulance owner'
+export type FranchiseStatus = 'Active' | 'Pending' | 'Suspended'
+
+export interface VehiclePhoto {
+  label: string
+  uploadedAt?: string
+  fileUrl?: string
+}
+
+export interface SubscriptionPlan {
+  id: string
+  name: string
+  audience: SubscriptionAudience
+  monthlyPrice: string
+  yearlyPrice: string
+  features: string[]
+  active: boolean
+  popular?: boolean
+}
+
+export interface EntitySubscription {
+  id: string
+  subscriberId: string
+  subscriberType: SubscriptionAudience
+  subscriberName: string
+  email: string
+  plan: SubscriptionPlanName
+  billing: SubscriptionBilling
+  status: SubscriptionStatus
+  startedOn: string
+  expiresOn: string | null
+  activatedBy?: string
+  notes?: string
+}
+
+/** @deprecated Use EntitySubscription */
+export type UserSubscription = EntitySubscription
+
+export interface SubscriptionLocationState {
+  justActivated?: string
+  justCreatedPlan?: string
+  plansTab?: boolean
+}
+
+export interface Franchise {
+  id: string
+  name: string
+  owner: string
+  email: string
+  phone: string
+  stateId: string
+  stateName: string
+  cities: string[]
+  commission: string
+  status: FranchiseStatus
+  joined: string
+}
 
 export interface AppState {
   id: string
@@ -157,6 +317,18 @@ export interface City {
   status: LocationStatus
 }
 
+export interface Specialty {
+  id: string
+  name: string
+  jobCategory: JobCategory
+  query: string
+  icon: string
+  color: string
+  sortOrder: number
+  status: LocationStatus
+}
+
 export interface OnboardLocationState {
   justOnboarded?: string
+  assignBookingId?: string
 }

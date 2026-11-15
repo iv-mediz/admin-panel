@@ -1,10 +1,10 @@
-import { Plus, Search } from 'lucide-react'
+import { Pencil, Plus, Search } from 'lucide-react'
 import { useMemo, useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
+import LocationFilters from '../components/LocationFilters'
 import Modal from '../components/Modal'
-import StatusChip from '../components/StatusChip'
+import ActiveToggle from '../components/ActiveToggle'
 import { useDirectory } from '../data/directory'
-import type { LocationStatus } from '../types'
 
 const TABS = ['All', 'Active', 'Pending', 'Paused'] as const
 
@@ -16,30 +16,42 @@ const empty = {
 
 export default function States() {
   const navigate = useNavigate()
-  const { states, cities, hospitals, addState, setStateStatus } = useDirectory()
+  const { states, cities, hospitals, addState, updateState, setStateStatus } = useDirectory()
   const [query, setQuery] = useState('')
   const [tab, setTab] = useState<(typeof TABS)[number]>('All')
+  const [stateFilter, setStateFilter] = useState('All')
   const [open, setOpen] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState(empty)
 
   const filtered = useMemo(() => {
     return states.filter((s) => {
       const q = query.toLowerCase()
       const matchesQuery = !q || s.name.toLowerCase().includes(q) || s.code.toLowerCase().includes(q)
-      return matchesQuery && (tab === 'All' || s.status === tab)
+      const matchesState = stateFilter === 'All' || s.name === stateFilter
+      return matchesQuery && matchesState && (tab === 'All' || s.status === tab)
     })
-  }, [states, query, tab])
+  }, [states, query, tab, stateFilter])
 
   function submit(e: FormEvent) {
     e.preventDefault()
-    addState({
-      id: `st-${Date.now()}`,
-      name: form.name,
-      code: form.code.toUpperCase(),
-      capital: form.capital,
-      status: 'Pending',
-    })
+    if (editingId) {
+      updateState(editingId, {
+        name: form.name.trim(),
+        code: form.code.toUpperCase(),
+        capital: form.capital.trim(),
+      })
+    } else {
+      addState({
+        id: `st-${Date.now()}`,
+        name: form.name.trim(),
+        code: form.code.toUpperCase(),
+        capital: form.capital.trim(),
+        status: 'Pending',
+      })
+    }
     setForm(empty)
+    setEditingId(null)
     setOpen(false)
   }
 
@@ -50,7 +62,14 @@ export default function States() {
           <h3>States</h3>
           <p>States where iv mediz lists jobs and ambulance services</p>
         </div>
-        <button className="btn btn-primary" onClick={() => setOpen(true)}>
+        <button
+          className="btn btn-primary"
+          onClick={() => {
+            setEditingId(null)
+            setForm(empty)
+            setOpen(true)
+          }}
+        >
           <Plus size={16} />
           Add state
         </button>
@@ -84,6 +103,13 @@ export default function States() {
           <Search size={16} color="#98A2B3" />
           <input placeholder="Search state or code" value={query} onChange={(e) => setQuery(e.target.value)} />
         </div>
+        <LocationFilters
+          state={stateFilter}
+          district="All"
+          onStateChange={setStateFilter}
+          onDistrictChange={() => {}}
+          showDistrict={false}
+        />
       </div>
       <div className="pills" style={{ marginBottom: 14 }}>
         {TABS.map((t) => (
@@ -115,22 +141,28 @@ export default function States() {
                 <td>{cities.filter((c) => c.stateId === s.id).length}</td>
                 <td>{hospitals.filter((h) => h.state === s.name).length}</td>
                 <td>
-                  <StatusChip label={s.status} />
+                  <ActiveToggle
+                    active={s.status === 'Active'}
+                    ariaLabel={`${s.name} state`}
+                    onChange={(on) => setStateStatus(s.id, on ? 'Active' : 'Paused')}
+                  />
                 </td>
                 <td className="row-actions">
-                  <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/cities?state=${s.id}`)}>
-                    Cities
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-sm"
+                    onClick={() => {
+                      setEditingId(s.id)
+                      setForm({ name: s.name, code: s.code, capital: s.capital })
+                      setOpen(true)
+                    }}
+                  >
+                    <Pencil size={14} />
+                    Edit
                   </button>
-                  {s.status !== 'Active' && (
-                    <button className="btn btn-ghost btn-sm" onClick={() => setStateStatus(s.id, 'Active')}>
-                      Activate
-                    </button>
-                  )}
-                  {s.status === 'Active' && (
-                    <button className="btn btn-ghost btn-sm" onClick={() => setStateStatus(s.id, 'Paused' as LocationStatus)}>
-                      Pause
-                    </button>
-                  )}
+                  <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/cities?state=${s.id}`)}>
+                    Cities / districts
+                  </button>
                 </td>
               </tr>
             ))}
@@ -140,7 +172,13 @@ export default function States() {
       </div>
 
       {open && (
-        <Modal title="Add state" onClose={() => setOpen(false)}>
+        <Modal
+          title={editingId ? 'Edit state' : 'Add state'}
+          onClose={() => {
+            setOpen(false)
+            setEditingId(null)
+          }}
+        >
           <form onSubmit={submit}>
             <div className="form-grid">
               <div className="field">
@@ -157,10 +195,17 @@ export default function States() {
               </div>
             </div>
             <div className="modal-actions">
-              <button type="button" className="btn btn-outline" onClick={() => setOpen(false)}>
+              <button
+                type="button"
+                className="btn btn-outline"
+                onClick={() => {
+                  setOpen(false)
+                  setEditingId(null)
+                }}
+              >
                 Cancel
               </button>
-              <button className="btn btn-primary">Add state</button>
+              <button className="btn btn-primary">{editingId ? 'Save changes' : 'Add state'}</button>
             </div>
           </form>
         </Modal>

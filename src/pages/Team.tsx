@@ -1,9 +1,12 @@
-import { Plus, Search } from 'lucide-react'
+import { Pencil, Plus, Search } from 'lucide-react'
 import { useMemo, useState, type FormEvent } from 'react'
+import CityDistrictSelect, { cityDistrictPayload } from '../components/CityDistrictSelect'
+import LocationFilters from '../components/LocationFilters'
 import Modal from '../components/Modal'
-import StatusChip from '../components/StatusChip'
+import ActiveToggle from '../components/ActiveToggle'
 import { useDirectory } from '../data/directory'
 import type { TeamMember, TeamRole } from '../types'
+import { matchesLocation } from '../utils/locationFilter'
 
 const ROLES = ['All', 'Super Admin', 'Recruiter', 'Dispatch', 'Support', 'Hospital Relations', 'Operations'] as const
 
@@ -12,7 +15,8 @@ interface MemberForm {
   role: TeamRole
   email: string
   phone: string
-  city: string
+  state: string
+  cityDistrict: string
 }
 
 const empty: MemberForm = {
@@ -20,14 +24,18 @@ const empty: MemberForm = {
   role: 'Support',
   email: '',
   phone: '',
-  city: 'Hyderabad',
+  state: 'Telangana',
+  cityDistrict: '',
 }
 
 export default function Team() {
-  const { team, addMember, setMemberStatus } = useDirectory()
+  const { team, addMember, updateMember, setMemberStatus, states } = useDirectory()
   const [query, setQuery] = useState('')
   const [role, setRole] = useState<(typeof ROLES)[number]>('All')
+  const [stateFilter, setStateFilter] = useState('All')
+  const [districtFilter, setDistrictFilter] = useState('All')
   const [open, setOpen] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [selected, setSelected] = useState<TeamMember | null>(null)
   const [form, setForm] = useState<MemberForm>(empty)
 
@@ -35,20 +43,40 @@ export default function Team() {
     return team.filter((m) => {
       const q = query.toLowerCase()
       const matchesQuery = !q || m.name.toLowerCase().includes(q) || m.email.toLowerCase().includes(q)
-      return matchesQuery && (role === 'All' || m.role === role)
+      const matchesLoc = matchesLocation(m, stateFilter, districtFilter)
+      return matchesQuery && matchesLoc && (role === 'All' || m.role === role)
     })
-  }, [team, query, role])
+  }, [team, query, role, stateFilter, districtFilter])
+
+  function closeModal() {
+    setOpen(false)
+    setEditingId(null)
+    setForm(empty)
+  }
 
   function submit(e: FormEvent) {
     e.preventDefault()
-    addMember({
-      id: `t${Date.now()}`,
-      ...form,
-      joined: 'Just now',
-      status: 'Invited',
-    })
-    setForm(empty)
-    setOpen(false)
+    const loc = cityDistrictPayload(form.cityDistrict)
+    const patch = {
+      name: form.name,
+      role: form.role,
+      email: form.email,
+      phone: form.phone,
+      city: loc.city,
+      district: loc.district,
+      state: form.state,
+    }
+    if (editingId) {
+      updateMember(editingId, patch)
+    } else {
+      addMember({
+        id: `t${Date.now()}`,
+        ...patch,
+        joined: 'Just now',
+        status: 'Invited',
+      })
+    }
+    closeModal()
   }
 
   return (
@@ -58,7 +86,14 @@ export default function Team() {
           <h3>Team</h3>
           <p>Internal iv mediz staff who run jobs, dispatch and hospital onboarding</p>
         </div>
-        <button className="btn btn-primary" onClick={() => setOpen(true)}>
+        <button
+          className="btn btn-primary"
+          onClick={() => {
+            setEditingId(null)
+            setForm(empty)
+            setOpen(true)
+          }}
+        >
           <Plus size={16} />
           Add team member
         </button>
@@ -92,6 +127,12 @@ export default function Team() {
           <Search size={16} color="#98A2B3" />
           <input placeholder="Search name or email" value={query} onChange={(e) => setQuery(e.target.value)} />
         </div>
+        <LocationFilters
+          state={stateFilter}
+          district={districtFilter}
+          onStateChange={setStateFilter}
+          onDistrictChange={setDistrictFilter}
+        />
         <select className="select" value={role} onChange={(e) => setRole(e.target.value as (typeof ROLES)[number])}>
           {ROLES.map((r) => (
             <option key={r} value={r}>
@@ -109,7 +150,7 @@ export default function Team() {
               <th>Role</th>
               <th>City</th>
               <th>Joined</th>
-              <th>Status</th>
+              <th>Active</th>
               <th />
             </tr>
           </thead>
@@ -129,17 +170,34 @@ export default function Team() {
                 <td>{m.city}</td>
                 <td>{m.joined}</td>
                 <td>
-                  <StatusChip label={m.status} />
+                  <ActiveToggle
+                    active={m.status === 'Active'}
+                    ariaLabel={`${m.name} team access`}
+                    onChange={(on) => setMemberStatus(m.id, on ? 'Active' : 'Invited')}
+                  />
                 </td>
                 <td className="row-actions">
+                  <button
+                    className="btn btn-ghost btn-sm"
+                    onClick={() => {
+                      setEditingId(m.id)
+                      setForm({
+                        name: m.name,
+                        role: m.role,
+                        email: m.email,
+                        phone: m.phone,
+                        state: m.state,
+                        cityDistrict: m.district || m.city,
+                      })
+                      setOpen(true)
+                    }}
+                  >
+                    <Pencil size={14} />
+                    Edit
+                  </button>
                   <button className="btn btn-ghost btn-sm" onClick={() => setSelected(m)}>
                     View
                   </button>
-                  {m.status === 'Invited' && (
-                    <button className="btn btn-ghost btn-sm" onClick={() => setMemberStatus(m.id, 'Active')}>
-                      Activate
-                    </button>
-                  )}
                 </td>
               </tr>
             ))}
@@ -149,7 +207,7 @@ export default function Team() {
       </div>
 
       {open && (
-        <Modal title="Add team member" onClose={() => setOpen(false)}>
+        <Modal title={editingId ? 'Edit team member' : 'Add team member'} onClose={closeModal}>
           <form onSubmit={submit}>
             <div className="form-grid">
               <div className="field">
@@ -173,18 +231,29 @@ export default function Team() {
                 <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} required />
               </div>
               <div className="field">
-                <label>City</label>
-                <select value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })}>
-                  <option>Hyderabad</option>
-                  <option>Bengaluru</option>
+                <label>State</label>
+                <select
+                  value={form.state}
+                  onChange={(e) => setForm({ ...form, state: e.target.value, cityDistrict: '' })}
+                >
+                  {(states.length ? states : [{ id: 'ts', name: 'Telangana' }]).map((s) => (
+                    <option key={s.id} value={s.name}>
+                      {s.name}
+                    </option>
+                  ))}
                 </select>
               </div>
+              <CityDistrictSelect
+                stateName={form.state}
+                value={form.cityDistrict}
+                onChange={(v) => setForm({ ...form, cityDistrict: v })}
+              />
             </div>
             <div className="modal-actions">
-              <button type="button" className="btn btn-outline" onClick={() => setOpen(false)}>
+              <button type="button" className="btn btn-outline" onClick={closeModal}>
                 Cancel
               </button>
-              <button className="btn btn-primary">Send invite</button>
+              <button className="btn btn-primary">{editingId ? 'Save changes' : 'Send invite'}</button>
             </div>
           </form>
         </Modal>

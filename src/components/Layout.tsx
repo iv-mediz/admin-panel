@@ -1,18 +1,25 @@
 import { useState } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { clearSession } from '../auth/session'
+import { useDirectory } from '../data/directory'
+import NewBookingAlert from './NewBookingAlert'
 import type { LucideIcon } from 'lucide-react'
 import {
   Ambulance,
   Bell,
   Briefcase,
   Building2,
+  Images,
   LayoutDashboard,
   LogOut,
   MapPin,
   MapPinned,
   Menu,
   Settings,
-  UserRound,
+  Star,
+  Store,
+  Stethoscope,
+  CreditCard,
   Users,
   UsersRound,
   X,
@@ -35,7 +42,6 @@ const NAV: NavGroup[] = [
     items: [
       { to: '/', label: 'Dashboard', icon: LayoutDashboard },
       { to: '/jobs', label: 'Jobs', icon: Briefcase },
-      { to: '/applications', label: 'Applications', icon: UserRound },
       { to: '/professionals', label: 'Professionals', icon: Users },
       { to: '/team', label: 'Team', icon: UsersRound },
     ],
@@ -51,13 +57,18 @@ const NAV: NavGroup[] = [
     label: 'Locations',
     items: [
       { to: '/states', label: 'States', icon: MapPinned },
-      { to: '/cities', label: 'Cities', icon: MapPin },
+      { to: '/cities', label: 'Cities / districts', icon: MapPin },
+      { to: '/specialties', label: 'Specialties', icon: Stethoscope },
+      { to: '/franchises', label: 'Franchises', icon: Store },
     ],
   },
   {
     label: 'More',
     items: [
+      { to: '/subscriptions', label: 'Subscriptions', icon: CreditCard },
+      { to: '/reviews', label: 'Ratings & reviews', icon: Star },
       { to: '/notifications', label: 'Notifications', icon: Bell },
+      { to: '/home-carousel', label: 'Home carousel', icon: Images },
       { to: '/settings', label: 'Settings', icon: Settings },
     ],
   },
@@ -66,17 +77,22 @@ const NAV: NavGroup[] = [
 function pageMeta(path: string): [string, string] {
   if (path.startsWith('/hospitals/onboard')) return ['Onboard hospital', 'Register a hospital partner']
   if (path.startsWith('/ambulances/onboard')) return ['Onboard ambulance', 'Register an operator and vehicle']
+  if (path.startsWith('/subscriptions/plans/create')) return ['Create plan', 'Define pricing and features for mobile users']
   if (path.startsWith('/hospitals')) return ['Hospitals', 'Onboard and approve partner hospitals']
   if (path.startsWith('/ambulances')) return ['Ambulances', 'Onboard fleet and review trip bookings']
   const map: Record<string, [string, string]> = {
     '/': ['Dashboard', 'Overview of jobs, applicants and ambulance bookings'],
     '/jobs': ['Healthcare Jobs', 'Post and manage hospital openings'],
-    '/applications': ['Applications', 'Review candidates and update hiring status'],
     '/professionals': ['Professionals', 'Doctors, nurses and allied health users'],
     '/team': ['Team', 'Internal staff who run the iv mediz admin panel'],
     '/states': ['States', 'States where iv mediz is live'],
-    '/cities': ['Cities', 'Cities and districts for jobs and ambulance pickup'],
+    '/cities': ['Cities / districts', 'Cities and districts for jobs and ambulance pickup'],
+    '/specialties': ['Specialties', 'Job specialties shown on the mobile home screen'],
+    '/franchises': ['Franchises', 'Partners who manage iv mediz in assigned locations'],
+    '/subscriptions': ['Subscriptions', 'Plans and manual activation for mobile users'],
+    '/reviews': ['Ratings & reviews', 'Moderate hospital, ambulance, and employee feedback'],
     '/notifications': ['Notifications', 'Alerts sent to the mobile app'],
+    '/home-carousel': ['Home carousel', 'Banners on the employee app home screen'],
     '/settings': ['Settings', 'Admin panel and brand preferences'],
   }
   return map[path] ?? ['iv mediz', 'Admin']
@@ -85,8 +101,10 @@ function pageMeta(path: string): [string, string] {
 export default function Layout() {
   const location = useLocation()
   const navigate = useNavigate()
+  const { bookings } = useDirectory()
   const [open, setOpen] = useState(false)
   const [title, subtitle] = pageMeta(location.pathname)
+  const newBookingCount = bookings.filter((b) => b.status === 'New').length
 
   return (
     <div className="app-shell">
@@ -127,7 +145,7 @@ export default function Layout() {
           <button
             className="icon-btn"
             onClick={() => {
-              localStorage.removeItem('ivmediz-admin')
+              clearSession()
               navigate('/login')
             }}
             title="Sign out"
@@ -146,14 +164,19 @@ export default function Layout() {
             <button className="icon-btn menu-btn" onClick={() => setOpen((v) => !v)} aria-label="Menu">
               {open ? <X size={18} /> : <Menu size={18} />}
             </button>
-            <button className="icon-btn" onClick={() => navigate('/notifications')}>
+            <button
+              className="icon-btn"
+              onClick={() => navigate('/ambulances')}
+              title={newBookingCount > 0 ? `${newBookingCount} new ambulance booking${newBookingCount === 1 ? '' : 's'}` : 'Ambulance bookings'}
+            >
               <Bell size={18} />
-              <span className="badge-dot" />
+              {newBookingCount > 0 ? <span className="badge-dot" /> : null}
             </button>
             <div className="avatar">A</div>
           </div>
         </header>
         <Outlet />
+        <NewBookingAlert />
       </div>
     </div>
   )

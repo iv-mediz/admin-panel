@@ -1,12 +1,14 @@
 import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
+import CityDistrictSelect, { cityDistrictPayload } from '../components/CityDistrictSelect'
 import { useDirectory } from '../data/directory'
 
 const STEPS = ['Operator', 'Vehicle', 'Review'] as const
 
 interface AmbulanceForm {
   operator: string
-  city: string
+  cityDistrict: string
+  state: string
   base: string
   serviceType: string
   vehicle: string
@@ -18,7 +20,8 @@ interface AmbulanceForm {
 
 const empty: AmbulanceForm = {
   operator: '',
-  city: '',
+  cityDistrict: '',
+  state: 'Telangana',
   base: '',
   serviceType: 'Basic Life Support',
   vehicle: '',
@@ -30,7 +33,7 @@ const empty: AmbulanceForm = {
 
 export default function OnboardAmbulance() {
   const navigate = useNavigate()
-  const { addVehicle } = useDirectory()
+  const { addVehicle, states } = useDirectory()
   const [step, setStep] = useState(0)
   const [form, setForm] = useState<AmbulanceForm>(empty)
 
@@ -44,6 +47,7 @@ export default function OnboardAmbulance() {
       setStep(step + 1)
       return
     }
+    const loc = cityDistrictPayload(form.cityDistrict)
     addVehicle({
       id: `v${Date.now()}`,
       operator: form.operator,
@@ -51,9 +55,18 @@ export default function OnboardAmbulance() {
       serviceType: form.serviceType,
       driver: form.driver,
       phone: form.phone,
-      city: form.city,
+      city: loc.city,
+      district: loc.district,
+      state: form.state,
       base: form.base,
       status: 'Pending',
+      license: form.license,
+      notes: form.notes,
+      vehiclePhotos: [
+        { label: 'Front view', uploadedAt: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) },
+        { label: 'Side view', uploadedAt: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) },
+        { label: 'Interior', uploadedAt: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) },
+      ],
     })
     navigate('/ambulances', { replace: true, state: { justOnboarded: form.vehicle } })
   }
@@ -84,7 +97,28 @@ export default function OnboardAmbulance() {
           <div className="form-grid">
             <Field label="Operator / company" value={form.operator} onChange={(v) => setField('operator', v)} placeholder="e.g. Mediz Care Ambulance" />
             <Field label="Base area" value={form.base} onChange={(v) => setField('base', v)} placeholder="e.g. Koramangala" />
-            <Field label="City" value={form.city} onChange={(v) => setField('city', v)} />
+            <div className="field">
+              <label>State</label>
+              <select
+                value={form.state}
+                onChange={(e) => {
+                  setForm((prev) => ({ ...prev, state: e.target.value, cityDistrict: '' }))
+                }}
+              >
+                {(states.length ? states : [{ id: 'ts', name: 'Telangana' }, { id: 'ka', name: 'Karnataka' }]).map(
+                  (s) => (
+                    <option key={s.id} value={s.name}>
+                      {s.name}
+                    </option>
+                  ),
+                )}
+              </select>
+            </div>
+            <CityDistrictSelect
+              stateName={form.state}
+              value={form.cityDistrict}
+              onChange={(v) => setField('cityDistrict', v)}
+            />
             <div className="field">
               <label>Service type</label>
               <select value={form.serviceType} onChange={(e) => setField('serviceType', e.target.value)}>
@@ -113,6 +147,7 @@ export default function OnboardAmbulance() {
           <div>
             <p className="muted" style={{ marginBottom: 14 }}>
               Confirm details. The vehicle stays <strong>Pending</strong> until you approve it from Ambulance fleet.
+              The driver phone ({form.phone || '—'}) can sign in on the mobile app with OTP to manage bookings once linked.
             </p>
             <div className="detail-grid">
               <Meta label="Operator" value={form.operator} />
@@ -120,7 +155,7 @@ export default function OnboardAmbulance() {
               <Meta label="Vehicle" value={form.vehicle} />
               <Meta label="Driver" value={form.driver} />
               <Meta label="Phone" value={form.phone} />
-              <Meta label="Base" value={`${form.base}, ${form.city}`} />
+              <Meta label="Base" value={`${form.base}, ${form.cityDistrict}, ${form.state}`} />
             </div>
           </div>
         )}
