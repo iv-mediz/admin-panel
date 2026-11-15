@@ -5,13 +5,11 @@ import { ApiError } from '../api/http'
 import { getApiBaseUrl, hasApiBackend, isDevBackend } from '../config/api'
 import { setApiSession } from '../auth/session'
 
-const ADMIN_EMAIL_DEFAULT = 'ivmediz3105@gmail.com'
-
 export default function Login() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const sessionExpired = searchParams.get('reason') === 'session'
-  const [email, setEmail] = useState(ADMIN_EMAIL_DEFAULT)
+  const [email, setEmail] = useState('')
   const [otp, setOtp] = useState(['', '', '', '', '', ''])
   const [step, setStep] = useState<'email' | 'otp'>('email')
   const [devOtp, setDevOtp] = useState<string | null>(null)
@@ -123,6 +121,7 @@ export default function Login() {
                 type="email"
                 required
                 autoComplete="email"
+                placeholder="Enter email"
               />
             </div>
             {error ? (
