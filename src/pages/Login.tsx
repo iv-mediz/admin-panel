@@ -2,7 +2,7 @@ import { useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { sendAdminOtp, verifyAdminOtp } from '../api/auth'
 import { ApiError } from '../api/http'
-import { getApiBaseUrl, hasApiBackend, isDevBackend } from '../config/api'
+import { hasApiBackend, isDevBackend } from '../config/api'
 import { setApiSession } from '../auth/session'
 
 export default function Login() {
@@ -110,9 +110,6 @@ export default function Login() {
                 Your session expired or is no longer valid. Sign in again with OTP.
               </p>
             ) : null}
-            <p className="hint" style={{ marginBottom: 12 }}>
-              API: <code>{getApiBaseUrl()}</code>
-            </p>
             <div className="field">
               <label>Email</label>
               <input
