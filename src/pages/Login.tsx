@@ -5,8 +5,7 @@ import { ApiError } from '../api/http'
 import { getApiBaseUrl, hasApiBackend, isDevBackend } from '../config/api'
 import { setApiSession } from '../auth/session'
 
-const DEV_OTP = '123456'
-const ADMIN_EMAIL_DEFAULT = 'admin@ivmediz.com'
+const ADMIN_EMAIL_DEFAULT = 'ivmediz3105@gmail.com'
 
 export default function Login() {
   const navigate = useNavigate()
@@ -33,7 +32,7 @@ export default function Login() {
     setError(null)
     try {
       const result = await sendAdminOtp(email.trim())
-      setDevOtp(result.devOtp ?? (isDevBackend() ? DEV_OTP : null))
+      setDevOtp(result.devOtp ?? null)
       setOtp(['', '', '', '', '', ''])
       setStep('otp')
     } catch (err) {
