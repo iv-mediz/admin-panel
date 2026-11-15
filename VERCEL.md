@@ -6,7 +6,7 @@ In **Vercel → your project → Settings → Environment Variables**, add:
 
 | Name | Value | Environments |
 |------|--------|--------------|
-| `VITE_API_BASE_URL` | `http://ivmedizbackend.repsoft.in/api/v1` | Production, Preview, Development |
+| `VITE_API_BASE_URL` | `https://api.ivmediz.com/api/v1` | Production, Preview, Development |
 
 The admin app is served over **HTTPS** on Vercel. Browsers block direct `http://` API calls (mixed content). **`vercel.json`** rewrites `/api/v1/*` to the EC2 API (`13.207.45.84:3000`). In the browser, requests use **`https://<your-vercel-app>/api/v1`**.
 

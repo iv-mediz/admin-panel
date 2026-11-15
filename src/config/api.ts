@@ -7,6 +7,9 @@ function configuredBaseUrl(): string {
 export function getApiBaseUrl(): string {
   const configured = configuredBaseUrl()
   if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
+    if (configured.startsWith('https://')) {
+      return configured
+    }
     const adminOrigin = window.location.origin
     if (!configured) {
       return `${adminOrigin}/api/v1`
@@ -19,7 +22,7 @@ export function getApiBaseUrl(): string {
     } catch {
       return `${adminOrigin}/api/v1`
     }
-    // Cross-origin API (typical: HTTP EC2) — always proxy to avoid mixed content / dead HTTPS hosts.
+    // HTTP API from an HTTPS admin page — use the same-origin Vercel rewrite.
     return `${adminOrigin}/api/v1`
   }
   return configured
@@ -45,6 +48,7 @@ export function apiUrl(path: string): string {
 export const devBackendHosts = new Set([
   'ivmedizbackend.repsoft.in',
   '13.207.45.84',
+  '13.207.111.96',
   'localhost',
   '127.0.0.1',
 ])
