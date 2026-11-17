@@ -59,26 +59,37 @@ export default function CreatePlan() {
     return true
   }
 
-  function next(e: FormEvent) {
+  const [publishError, setPublishError] = useState('')
+  const [publishing, setPublishing] = useState(false)
+
+  async function next(e: FormEvent) {
     e.preventDefault()
-    if (!canContinue()) return
+    if (!canContinue() || publishing) return
 
     if (step < 2) {
       setStep(step + 1)
       return
     }
 
-    addSubscriptionPlan({
-      id: `plan-${Date.now()}`,
-      name: form.name.trim(),
-      audience: form.audience,
-      monthlyPrice: form.monthlyPrice.trim(),
-      yearlyPrice: form.yearlyPrice.trim(),
-      features: form.features,
-      active: true,
-      popular: form.popular,
-    })
-    navigate('/subscriptions', { replace: true, state: { justCreatedPlan: form.name.trim(), plansTab: true } })
+    setPublishError('')
+    setPublishing(true)
+    try {
+      await addSubscriptionPlan({
+        id: `plan-${Date.now()}`,
+        name: form.name.trim(),
+        audience: form.audience,
+        monthlyPrice: form.monthlyPrice.trim(),
+        yearlyPrice: form.yearlyPrice.trim(),
+        features: form.features,
+        active: true,
+        popular: form.popular,
+      })
+      navigate('/subscriptions', { replace: true, state: { justCreatedPlan: form.name.trim(), plansTab: true } })
+    } catch (err) {
+      setPublishError(err instanceof Error ? err.message : 'Could not publish plan')
+    } finally {
+      setPublishing(false)
+    }
   }
 
   return (
@@ -233,8 +244,9 @@ export default function CreatePlan() {
               Back
             </button>
           )}
-          <button className="btn btn-primary" disabled={!canContinue()}>
-            {step === 2 ? 'Publish plan' : 'Continue'}
+          {publishError && <p className="field-hint error">{publishError}</p>}
+          <button className="btn btn-primary" disabled={!canContinue() || publishing}>
+            {step === 2 ? (publishing ? 'Publishing…' : 'Publish plan') : 'Continue'}
           </button>
         </div>
       </form>

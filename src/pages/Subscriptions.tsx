@@ -68,6 +68,10 @@ export default function Subscriptions() {
     active: true,
     featuresText: '',
   })
+  const [planSaveError, setPlanSaveError] = useState('')
+  const [planSaving, setPlanSaving] = useState(false)
+  const [subSaveError, setSubSaveError] = useState('')
+  const [subSaving, setSubSaving] = useState(false)
   const [subscriberType, setSubscriberType] = useState<SubscriptionAudience>('Employee')
   const [subscriberId, setSubscriberId] = useState('')
   const [plan, setPlan] = useState('')
@@ -354,6 +358,7 @@ export default function Subscriptions() {
                 className="btn btn-outline btn-sm"
                 style={{ marginTop: 12 }}
                 onClick={() => {
+                  setPlanSaveError('')
                   setEditingPlan(p)
                   setPlanForm({
                     name: p.name,
@@ -458,13 +463,21 @@ export default function Subscriptions() {
         <Modal title={`Edit subscription — ${editingSub.subscriberName}`} onClose={() => setEditingSub(null)}>
           <form
             className="form-grid"
-            onSubmit={(e) => {
+            onSubmit={async (e) => {
               e.preventDefault()
-              updateUserSubscription(editingSub.id, {
-                planName: editPlanName,
-                billing: editBilling,
-              })
-              setEditingSub(null)
+              setSubSaveError('')
+              setSubSaving(true)
+              try {
+                await updateUserSubscription(editingSub.id, {
+                  planName: editPlanName,
+                  billing: editBilling,
+                })
+                setEditingSub(null)
+              } catch (err) {
+                setSubSaveError(err instanceof Error ? err.message : 'Could not save subscription')
+              } finally {
+                setSubSaving(false)
+              }
             }}
           >
             <div className="field full">
@@ -489,11 +502,16 @@ export default function Subscriptions() {
                 ))}
               </select>
             </div>
-            <div className="modal-actions">
-              <button type="button" className="btn btn-outline" onClick={() => setEditingSub(null)}>
-                Cancel
-              </button>
-              <button className="btn btn-primary">Save changes</button>
+            {subSaveError && <p className="field-hint error full">{subSaveError}</p>}
+            <div className="field full">
+              <div className="modal-actions">
+                <button type="button" className="btn btn-outline" onClick={() => setEditingSub(null)}>
+                  Cancel
+                </button>
+                <button className="btn btn-primary" type="submit" disabled={subSaving}>
+                  {subSaving ? 'Saving…' : 'Save changes'}
+                </button>
+              </div>
             </div>
           </form>
         </Modal>
@@ -503,21 +521,29 @@ export default function Subscriptions() {
         <Modal title="Edit plan" onClose={() => setEditingPlan(null)}>
           <form
             className="form-grid"
-            onSubmit={(e) => {
+            onSubmit={async (e) => {
               e.preventDefault()
-              updateSubscriptionPlan(editingPlan.id, {
-                name: planForm.name.trim(),
-                audience: planForm.audience,
-                monthlyPrice: planForm.monthlyPrice.trim(),
-                yearlyPrice: planForm.yearlyPrice.trim(),
-                popular: planForm.popular,
-                active: planForm.active,
-                features: planForm.featuresText
-                  .split('\n')
-                  .map((f) => f.trim())
-                  .filter(Boolean),
-              })
-              setEditingPlan(null)
+              setPlanSaveError('')
+              setPlanSaving(true)
+              try {
+                await updateSubscriptionPlan(editingPlan.id, {
+                  name: planForm.name.trim(),
+                  audience: planForm.audience,
+                  monthlyPrice: planForm.monthlyPrice.trim(),
+                  yearlyPrice: planForm.yearlyPrice.trim(),
+                  popular: planForm.popular,
+                  active: planForm.active,
+                  features: planForm.featuresText
+                    .split('\n')
+                    .map((f) => f.trim())
+                    .filter(Boolean),
+                })
+                setEditingPlan(null)
+              } catch (err) {
+                setPlanSaveError(err instanceof Error ? err.message : 'Could not save plan')
+              } finally {
+                setPlanSaving(false)
+              }
             }}
           >
             <div className="field">
@@ -585,11 +611,16 @@ export default function Subscriptions() {
                 Active
               </label>
             </div>
-            <div className="modal-actions">
-              <button type="button" className="btn btn-outline" onClick={() => setEditingPlan(null)}>
-                Cancel
-              </button>
-              <button className="btn btn-primary">Save plan</button>
+            {planSaveError && <p className="field-hint error full">{planSaveError}</p>}
+            <div className="field full">
+              <div className="modal-actions">
+                <button type="button" className="btn btn-outline" onClick={() => setEditingPlan(null)}>
+                  Cancel
+                </button>
+                <button className="btn btn-primary" type="submit" disabled={planSaving}>
+                  {planSaving ? 'Saving…' : 'Save plan'}
+                </button>
+              </div>
             </div>
           </form>
         </Modal>
