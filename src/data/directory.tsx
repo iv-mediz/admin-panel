@@ -83,9 +83,9 @@ interface DirectoryContextValue {
   removeProfessional: (id: string) => void
   updateMember: (id: string, patch: Partial<TeamMember>) => void
   updateHospital: (id: string, patch: Partial<Hospital>) => void
-  addSubscriptionPlan: (plan: SubscriptionPlan) => void
-  updateSubscriptionPlan: (id: string, patch: Partial<SubscriptionPlan>) => void
-  updateUserSubscription: (id: string, patch: Partial<EntitySubscription> & { planName?: string }) => void
+  addSubscriptionPlan: (plan: SubscriptionPlan) => Promise<void>
+  updateSubscriptionPlan: (id: string, patch: Partial<SubscriptionPlan>) => Promise<void>
+  updateUserSubscription: (id: string, patch: Partial<EntitySubscription> & { planName?: string }) => Promise<void>
   setHospitalStatus: (id: string, status: HospitalStatus) => void
   setHospitalActive: (id: string, isActive: boolean) => void
   setVehicleStatus: (id: string, status: VehicleStatus) => void
@@ -523,30 +523,31 @@ export function DirectoryProvider({ children }: { children: ReactNode }) {
           void adminApi.updateFranchise(id, { status })
         }
       },
-      addSubscriptionPlan: (plan) => {
+      addSubscriptionPlan: async (plan) => {
         if (hasApiBackend()) {
-          void adminApi.createSubscriptionPlan(plan).then((created) => {
-            setSubscriptionPlans((prev) => [...prev, created])
-          })
+          const created = await adminApi.createSubscriptionPlan(plan)
+          setSubscriptionPlans((prev) => [...prev, created])
           return
         }
         setSubscriptionPlans((prev) => [...prev, plan])
       },
-      updateSubscriptionPlan: (id, patch) => {
+      updateSubscriptionPlan: async (id, patch) => {
+        if (hasApiBackend()) {
+          const updated = await adminApi.updateSubscriptionPlan(id, patch)
+          setSubscriptionPlans((prev) => prev.map((p) => (p.id === id ? updated : p)))
+          return
+        }
         setSubscriptionPlans((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)))
-        if (hasApiBackend()) {
-          void adminApi.updateSubscriptionPlan(id, patch).then((updated) => {
-            setSubscriptionPlans((prev) => prev.map((p) => (p.id === id ? updated : p)))
-          })
-        }
       },
-      updateUserSubscription: (id, patch) => {
-        setUserSubscriptions((prev) => prev.map((s) => (s.id === id ? { ...s, ...patch, ...(patch.planName ? { plan: patch.planName } : {}) } : s)))
+      updateUserSubscription: async (id, patch) => {
         if (hasApiBackend()) {
-          void adminApi.updateSubscription(id, patch).then((updated) => {
-            setUserSubscriptions((prev) => prev.map((s) => (s.id === id ? updated : s)))
-          })
+          const updated = await adminApi.updateSubscription(id, patch)
+          setUserSubscriptions((prev) => prev.map((s) => (s.id === id ? updated : s)))
+          return
         }
+        setUserSubscriptions((prev) =>
+          prev.map((s) => (s.id === id ? { ...s, ...patch, ...(patch.planName ? { plan: patch.planName } : {}) } : s)),
+        )
       },
       updateApplicationStatus: (id, status) => {
         setApplications((prev) => prev.map((a) => (a.id === id ? { ...a, status } : a)))
